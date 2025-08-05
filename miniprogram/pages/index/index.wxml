@@ -1,0 +1,4 @@
+<!--index.wxml-->
+<view class="login-container">
+  <button wx:if="{{!hasUserInfo}}" class="login-btn" bindtap="onGetUserProfile">微信一键登录</button>
+</view>

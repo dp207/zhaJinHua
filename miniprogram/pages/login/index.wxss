@@ -1,0 +1,68 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f0f8f0; /* 浅绿色背景 */
+}
+
+.logo {
+  width: 150rpx;
+  height: 150rpx;
+  margin-bottom: 40rpx;
+}
+
+.title {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 80rpx;
+}
+
+.avatar-wrapper {
+  padding: 0;
+  width: 150rpx;
+  height: 150rpx;
+  margin-top: 50rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #f0f0f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+}
+
+.nickname-wrapper {
+  display: flex;
+  align-items: center;
+  margin-top: 30rpx;
+  width: 80%;
+  border: 1px solid #eee;
+  border-radius: 10rpx;
+  padding: 10rpx 20rpx;
+}
+
+.nickname-label {
+  font-size: 32rpx;
+  color: #333;
+  margin-right: 20rpx;
+}
+
+.nickname-input {
+  flex: 1;
+  font-size: 32rpx;
+  color: #333;
+}
+
+.login-btn {
+  width: 80%;
+  margin-top: 50rpx;
+  background-color: #07c160;
+  color: #fff;
+}

@@ -1,0 +1,59 @@
+<view class="lobby-header">
+  <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" />
+  <text class="nickname">{{userInfo.nickName}}</text>
+</view>
+
+<!-- 其余大厅内容可继续补充 -->
+<view class="lobby-container">
+  <button bindtap="onMatchTap" class="match-btn">快速匹配</button>
+  <button bindtap="onCreateRoomTap" class="create-room-btn">创建房间</button>
+  <button bindtap="onJoinRoomTap" class="join-room-btn">加入房间</button>
+
+  <view class="modal-mask" wx:if="{{showCreateRoomModal}}" catchtap="hideCreateRoomModal"></view>
+  <view class="modal-dialog" wx:if="{{showCreateRoomModal}}" catchtap="doNothing">
+    <view class="modal-title">创建房间</view>
+    <view class="modal-content">
+      <view class="form-item">
+        <text class="label">房间类型:</text>
+        <radio-group bindchange="onRoomTypeChange" catchtap="doNothing">
+          <label class="radio" catchtap="doNothing"><radio value="public" checked="{{roomType === 'public'}}" catchtap="doNothing"/>公开</label>
+          <label class="radio" catchtap="doNothing"><radio value="private" checked="{{roomType === 'private'}}" catchtap="doNothing"/>私人</label>
+        </radio-group>
+      </view>
+      <view class="form-item">
+        <text class="label">底分:</text>
+        <input type="number" bindinput="onBaseScoreInput" value="{{baseScore}}" placeholder="请输入底分" catchtap="doNothing"/>
+      </view>
+      <view class="form-item" wx:if="{{roomType === 'private'}}">
+        <text class="label">初始积分:</text>
+        <input type="number" bindinput="onInitialScoreInput" value="{{initialScore}}" placeholder="请输入初始积分" catchtap="doNothing"/>
+      </view>
+    </view>
+    <view class="modal-footer" catchtap="doNothing">
+      <button class="btn-cancel" catchtap="hideCreateRoomModal">取消</button>
+      <button class="btn-confirm" catchtap="confirmCreateRoom">创建</button>
+    </view>
+  </view>
+  <view wx:if="{{matching}}" class="countdown">
+    正在匹配中... {{countdown}} 秒
+  </view>
+  <view wx:if="{{timeout}}" class="timeout-tip">
+    匹配超时，请稍后再试
+  </view>
+  
+  <!-- 加入房间弹窗 -->
+  <view class="modal-mask" wx:if="{{showJoinRoomModal}}" catchtap="hideJoinRoomModal"></view>
+  <view class="modal-dialog" wx:if="{{showJoinRoomModal}}" catchtap="doNothing">
+    <view class="modal-title">加入房间</view>
+    <view class="modal-content">
+      <view class="form-item">
+        <text class="label">房间号:</text>
+        <input type="text" bindinput="onRoomIdInput" value="{{inputRoomId}}" placeholder="请输入6位房间号" maxlength="6" catchtap="doNothing"/>
+      </view>
+    </view>
+    <view class="modal-footer" catchtap="doNothing">
+      <button class="btn-cancel" catchtap="hideJoinRoomModal">取消</button>
+      <button class="btn-confirm" catchtap="confirmJoinRoom">加入</button>
+    </view>
+  </view>
+</view>

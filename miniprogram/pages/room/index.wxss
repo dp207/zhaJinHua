@@ -1,0 +1,378 @@
+/* 整体容器 */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #1a6840; /* 牌桌绿色背景 */
+  color: #ffffff;
+  padding: 10rpx;
+}
+
+/* 房间信息 */
+.room-info {
+  display: flex;
+  justify-content: space-between;
+  padding: 20rpx;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 10rpx;
+  margin-bottom: 20rpx;
+}
+
+.room-id, .base-score {
+  font-size: 28rpx;
+  font-weight: bold;
+}
+
+.leave-btn {
+  font-size: 24rpx;
+  padding: 6rpx 12rpx;
+  background-color: #ff6666;
+  color: #ffffff;
+  border-radius: 8rpx;
+  margin-left: auto;
+  line-height: 1.5;
+  height: auto;
+}
+
+/* 游戏区域 */
+.game-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* 牌桌 */
+.poker-table {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  border-radius: 50%;
+  background-color: #0e5733; /* 深绿色牌桌 */
+  box-shadow: 0 0 20rpx rgba(0, 0, 0, 0.5);
+  margin: 20rpx;
+  padding: 20rpx;
+}
+
+/* 下注池 */
+.pot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 20rpx 40rpx;
+  border-radius: 40rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #ffcc00; /* 金色文字 */
+}
+
+/* 玩家区域 */
+.players-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.player {
+  position: absolute;
+  width: 180rpx;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 10rpx;
+  padding: 10rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 根据玩家索引定位 - 当前用户始终在底部，其他玩家顺时针排列 */
+.players-container .player.current-player {
+  bottom: 20rpx;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 其他玩家按顺时针排列 */
+.players-container .player:not(.current-player):nth-of-type(1) {
+  top: 50%;
+  left: 20rpx;
+  transform: translateY(-50%);
+}
+
+.players-container .player:not(.current-player):nth-of-type(2) {
+  top: 20rpx;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.players-container .player:not(.current-player):nth-of-type(3) {
+  top: 50%;
+  right: 20rpx;
+  transform: translateY(-50%);
+}
+
+.current-player {
+  border: 4rpx solid #ffcc00; /* 金色边框标识当前玩家 */
+}
+
+.avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  margin-bottom: 10rpx;
+}
+
+.nickname {
+  font-size: 24rpx;
+  margin-bottom: 5rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160rpx;
+}
+
+.score, .status, .bet {
+  font-size: 22rpx;
+  margin-bottom: 5rpx;
+}
+
+.status {
+  color: #ffcc00; /* 金色状态文字 */
+}
+
+.bet {
+  color: #ff6666; /* 红色下注文字 */
+}
+
+/* 手牌样式 */
+.hand-cards {
+  display: flex;
+  margin-top: 10rpx;
+}
+
+.card {
+  width: 50rpx;
+  height: 70rpx;
+  background-color: #ffffff;
+  border-radius: 5rpx;
+  margin: 0 2rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20rpx;
+  color: #000000;
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
+}
+
+.card.hidden {
+  background-color: #b71c1c; /* 红色牌背 */
+  background-image: linear-gradient(45deg, #b71c1c 25%, #d32f2f 25%, #d32f2f 50%, #b71c1c 50%, #b71c1c 75%, #d32f2f 75%, #d32f2f 100%);
+  background-size: 10rpx 10rpx;
+}
+
+/* 操作区域 */
+.action-area {
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 10rpx;
+  margin-top: 20rpx;
+}
+
+.action-btn {
+  font-size: 28rpx;
+  padding: 10rpx 20rpx;
+  background-color: #d4af37; /* 金色按钮 */
+  color: #000000;
+  border-radius: 10rpx;
+  margin: 0 5rpx;
+  min-width: 120rpx;
+}
+
+/* 准备按钮区域 */
+.ready-area {
+  display: flex;
+  justify-content: center;
+  padding: 20rpx;
+}
+
+.ready-btn {
+  font-size: 32rpx;
+  padding: 15rpx 60rpx;
+  background-color: #d4af37; /* 金色按钮 */
+  color: #000000;
+  border-radius: 10rpx;
+}
+
+/* 加注输入框 */
+.raise-input {
+  position: absolute;
+  bottom: 150rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 20rpx;
+  border-radius: 10rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80%;
+  z-index: 10;
+}
+
+.raise-input input {
+  background-color: #ffffff;
+  color: #000000;
+  width: 100%;
+  padding: 10rpx;
+  border-radius: 5rpx;
+  margin-bottom: 20rpx;
+}
+
+.raise-input button {
+  margin: 10rpx;
+  font-size: 28rpx;
+  padding: 10rpx 30rpx;
+}
+
+/* 比牌选择 */
+.compare-select {
+  position: absolute;
+  bottom: 150rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 20rpx;
+  border-radius: 10rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80%;
+  z-index: 10;
+}
+
+.compare-select text {
+  margin-bottom: 20rpx;
+  font-size: 28rpx;
+}
+
+.compare-players {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20rpx;
+}
+
+.compare-players button {
+  margin: 10rpx;
+  font-size: 24rpx;
+  padding: 10rpx 20rpx;
+}
+
+/* 聊天区域 */
+.chat-area {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.7);
+  border-top-left-radius: 20rpx;
+  border-top-right-radius: 20rpx;
+  padding: 10rpx 0 0 0;
+}
+.chat-header {
+  text-align: center;
+  padding: 10rpx 0;
+  color: #ffcc00;
+  font-size: 26rpx;
+  background: rgba(0,0,0,0.3);
+  border-top-left-radius: 20rpx;
+  border-top-right-radius: 20rpx;
+  cursor: pointer;
+}
+.chat-messages {
+  max-height: 220rpx;
+  overflow-y: auto;
+  padding: 10rpx 20rpx;
+}
+.chat-message-bubble {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12rpx;
+}
+.chat-avatar {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  margin-right: 12rpx;
+  background: #fff;
+}
+.chat-bubble-content {
+  background: #fff;
+  color: #222;
+  border-radius: 16rpx;
+  padding: 10rpx 18rpx;
+  max-width: 420rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+}
+.chat-sender {
+  font-size: 22rpx;
+  color: #1a6840;
+  font-weight: bold;
+  margin-bottom: 2rpx;
+}
+.chat-content {
+  font-size: 22rpx;
+  word-break: break-all;
+}
+.chat-input {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 20rpx 20rpx 20rpx;
+  background: rgba(0,0,0,0.3);
+  border-bottom-left-radius: 20rpx;
+  border-bottom-right-radius: 20rpx;
+}
+.chat-input input {
+  flex: 1;
+  height: 48rpx;
+  border-radius: 10rpx;
+  border: none;
+  padding: 0 16rpx;
+  font-size: 22rpx;
+  margin-right: 10rpx;
+}
+.chat-input button {
+  font-size: 22rpx;
+  padding: 0 24rpx;
+  height: 48rpx;
+  border-radius: 10rpx;
+  background: #d4af37;
+  color: #000;
+  border: none;
+}
+
+.chat-input button[disabled] {
+  background-color: #666666;
+  color: #999999;
+}
+
+.chat-input button {
+  font-size: 24rpx;
+  padding: 5rpx 20rpx;
+  background-color: #d4af37; /* 金色按钮 */
+  color: #000000;
+  border-radius: 5rpx;
+}
+
+.chat-input button[disabled] {
+  background-color: #666666;
+  color: #999999;
+}
