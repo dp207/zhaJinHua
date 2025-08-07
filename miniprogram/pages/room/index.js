@@ -22,7 +22,7 @@ Page({
     chatInput: '',
     canSendChat: true,
     lastChatTime: 0,
-    chatCollapsed: false // 聊天收起状态
+    chatCollapsed: true // 聊天默认收起状态
   },
 
   onLoad: function (options) {
@@ -183,20 +183,27 @@ Page({
         const formattedPlayers = this.formatPlayers(roomInfo.players);
         console.log('加入房间后，格式化的玩家列表:', JSON.stringify(formattedPlayers));
         
+        // 判断当前用户是否是房主
+        const isOwner = roomInfo.players.length > 0 && 
+                       roomInfo.players[0].openId === this.data.userInfo._openid && 
+                       roomInfo.players[0].isOwner;
+        
         this.setData({
           roomInfo: roomInfo,
           players: formattedPlayers,
           baseScore: roomInfo.baseScore,
           gameStatus: roomInfo.status,
-          isReady: false // 确保玩家进入房间后不会自动准备
+          isReady: false, // 确保玩家进入房间后不会自动准备
+          isCurrentPlayer: isOwner && roomInfo.status === 'waiting' // 如果是房主且房间状态为等待中，则设置为当前玩家
         }, () => {
           console.log('页面数据更新完成, players:', JSON.stringify(this.data.players));
+          console.log('当前玩家状态:', this.data.isCurrentPlayer ? '是当前玩家' : '不是当前玩家');
           // 强制刷新页面
           this.forceUpdate();
         });
         
         // 确保数据库中的isReady也为false
-        const myPlayer = roomInfo.players.find(p => p.openId === this.data.userInfo.openId);
+        const myPlayer = roomInfo.players.find(p => p.openId === this.data.userInfo._openid);
         if (myPlayer) {
           console.log('加入房间后，检查isReady状态 - 数据库:', myPlayer.isReady, '前端:', this.data.isReady);
           
@@ -385,12 +392,18 @@ Page({
               const formattedPlayers = this.formatPlayers(players);
               console.log('格式化后的玩家列表:', JSON.stringify(formattedPlayers));
 
+              // 判断当前用户是否是房主
+              const isOwner = players.length > 0 && 
+                             players[0].openId === this.data.userInfo._openid && 
+                             players[0].isOwner;
+              
               // 更新页面数据
               this.setData({
                 roomInfo: roomData,
                 players: formattedPlayers,
                 gameStatus: roomData.status,
-                baseScore: roomData.baseScore
+                baseScore: roomData.baseScore,
+                isCurrentPlayer: isOwner && roomData.status === 'waiting' // 如果是房主且房间状态为等待中，则设置为当前玩家
               }, () => {
                 console.log('页面数据更新完成，当前玩家列表:', JSON.stringify(this.data.players));
                 // 强制刷新页面
@@ -398,7 +411,7 @@ Page({
               });
 
               // 获取当前玩家信息
-              const myPlayer = players.find(p => p.openId === this.data.userInfo.openId);
+              const myPlayer = players.find(p => p.openId === this.data.userInfo._openid);
               console.log('当前玩家信息:', myPlayer ? JSON.stringify(myPlayer) : '未找到当前玩家');
               
               // 同步isReady状态
@@ -407,8 +420,26 @@ Page({
                 this.setData({ isReady: myPlayer.isReady });
               }
               // 如果游戏状态变为playing，则设置游戏监听
-              if (roomData.status === 'playing' && roomData.currentGameId && !this.gameListener) {
-                this.setupGameListener(roomData.currentGameId)
+              console.log('=== 检查是否需要设置游戏监听 - 时间:', new Date().toLocaleString(), '===');
+              console.log('游戏状态:', roomData.status);
+              console.log('当前游戏ID:', roomData.currentGameId);
+              console.log('是否已有监听:', !!this.gameListener);
+              console.log('房间状态:', roomData.status);
+              console.log('房间玩家数量:', roomData.players ? roomData.players.length : 0);
+              
+              // 强制重新设置游戏监听，确保数据更新能被捕获
+              if (roomData.status === 'playing' && roomData.currentGameId) {
+                console.log('游戏状态为playing且有currentGameId，设置游戏监听');
+                // 无论是否已有监听器，都重新设置
+                this.setupGameListener(roomData.currentGameId);
+              } else {
+                console.log('不满足设置游戏监听条件，跳过');
+                if (roomData.status !== 'playing') {
+                  console.log('游戏状态不是playing，不设置监听');
+                }
+                if (!roomData.currentGameId) {
+                  console.log('没有currentGameId，不设置监听');
+                }
               }
           } else if (snapshot.type === 'remove') {
             console.log('房间被删除');
@@ -436,57 +467,214 @@ Page({
 
   // 设置游戏数据监听
   setupGameListener: function (gameId) {
+    console.log('=== 设置游戏数据监听 - 时间:', new Date().toLocaleString(), '===');
+    console.log('设置游戏数据监听, gameId:', gameId);
+    
+    // 如果已经有监听器，先关闭
+    if (this.gameListener) {
+      console.log('关闭已存在的游戏监听器');
+      try {
+        this.gameListener.close();
+      } catch (err) {
+        console.error('关闭游戏监听器失败:', err);
+      }
+    }
+    
+    const db = wx.cloud.database();
     this.gameListener = db.collection('games')
       .where({ gameId: gameId })
       .watch({
         onChange: snapshot => {
+          console.log('=== 收到游戏数据变化 - 时间:', new Date().toLocaleString(), '===');
+          console.log('收到游戏数据变化, type:', snapshot.type);
+          console.log('snapshot.docChanges长度:', snapshot.docChanges ? snapshot.docChanges.length : 0);
+          
+          // 检查是否有docChanges数据
+          if (snapshot.docChanges && snapshot.docChanges.length > 0) {
+            console.log('检测到docChanges数据变化，长度:', snapshot.docChanges.length);
+            snapshot.docChanges.forEach((change, index) => {
+              console.log(`docChange[${index}].dataType:`, change.dataType);
+              console.log(`docChange[${index}].queueType:`, change.queueType);
+              console.log(`docChange[${index}].docId:`, change.docId);
+              console.log(`docChange[${index}].updatedFields:`, JSON.stringify(change.updatedFields));
+            });
+          }
+          
           if (snapshot.type === 'init' || snapshot.type === 'update') {
-            const gameData = snapshot.docs[0]
-            if (gameData) {
-              // 更新游戏相关数据
-              this.updateGameData(gameData)
+            console.log('游戏数据初始化或更新, type:', snapshot.type);
+            if (!snapshot.docs || snapshot.docs.length === 0) {
+              console.error('游戏数据更新: 没有找到文档数据');
+              return;
             }
+            
+            console.log('snapshot.docs长度:', snapshot.docs.length);
+            const gameData = snapshot.docs[0];
+            if (gameData) {
+              console.log('游戏数据更新，准备调用updateGameData函数');
+              console.log('游戏数据ID:', gameData._id);
+              console.log('游戏状态:', gameData.status);
+              console.log('当前玩家索引:', gameData.currentPlayerIndex);
+              console.log('玩家数量:', gameData.players ? gameData.players.length : 0);
+              
+              // 更新游戏相关数据
+              this.updateGameData(gameData);
+            } else {
+              console.error('游戏数据为空');
+            }
+          } else {
+            console.log('游戏数据变化类型不是init或update，不处理');
           }
         },
         onError: err => {
-          console.error('游戏监听错误:', err)
+          console.error('游戏监听错误:', err);
         }
-      })
+      });
+    console.log('游戏数据监听设置完成, gameListener:', this.gameListener ? '已设置' : '设置失败');
   },
 
   // 更新游戏数据
   updateGameData: function (gameData) {
+    console.log('=== updateGameData函数被调用 - 时间:', new Date().toLocaleString(), '===');
+    console.log('更新游戏数据:', JSON.stringify(gameData));
+    console.log('游戏状态:', gameData.status, '当前玩家索引:', gameData.currentPlayerIndex);
+    console.log('游戏玩家数据:', JSON.stringify(gameData.players));
+    
     // 更新总下注池
     this.setData({
       totalPot: gameData.totalPot || 0
     })
+    console.log('更新总下注池:', gameData.totalPot || 0);
 
     // 更新玩家数据（手牌、下注等）
+    console.log('开始更新玩家数据，当前玩家数量:', this.data.players.length);
     const updatedPlayers = this.data.players.map(player => {
-      const playerGameData = gameData.players.find(p => p.openId === player.openId)
+      console.log(`处理玩家 ${player.nickname}(${player.openId})`);
+      const playerGameData = gameData.players.find(p => p.openId === player.openId);
       if (playerGameData) {
-        return {
-          ...player,
-          handCards: playerGameData.handCards || [],
-          currentBet: playerGameData.currentBet || 0,
-          totalBet: playerGameData.totalBet || 0,
-          status: playerGameData.status || player.status
+        console.log(`找到玩家 ${player.nickname} 的游戏数据`);
+        console.log(`玩家 ${player.nickname} 原始数据:`, JSON.stringify(player));
+        console.log(`玩家 ${player.nickname} 的游戏数据:`, JSON.stringify(playerGameData));
+        console.log(`玩家 ${player.nickname} 原始数据详情:`, 
+                  `状态=${player.status}, ` +
+                  `当前下注=${player.currentBet}, ` +
+                  `总下注=${player.totalBet}, ` +
+                  `手牌数量=${player.handCards ? player.handCards.length : 0}`);
+        console.log(`玩家 ${player.nickname} 游戏数据详情:`, 
+                  `状态=${playerGameData.status}, ` +
+                  `当前下注=${playerGameData.currentBet}, ` +
+                  `总下注=${playerGameData.totalBet}, ` +
+                  `手牌数量=${playerGameData.handCards ? playerGameData.handCards.length : 0}`);
+        
+        // 保存原有手牌的可见性状态
+        const preservedHandCards = [];
+        if (player.handCards && player.handCards.length > 0) {
+          console.log(`玩家 ${player.nickname} 有原始手牌，数量:`, player.handCards.length);
+          // 创建一个映射，记录每张牌的可见性
+          const visibilityMap = {};
+          player.handCards.forEach(card => {
+            // 兼容 card.rank 和 card.value 两种情况
+            const cardValue = card.rank || card.value;
+            const cardKey = `${card.suit}_${cardValue}`;
+            visibilityMap[cardKey] = card.isVisible;
+            console.log(`记录手牌可见性: ${cardKey} = ${card.isVisible}`);
+          });
+          
+          // 应用可见性到新的手牌
+          if (playerGameData.handCards && playerGameData.handCards.length > 0) {
+            console.log(`玩家 ${player.nickname} 游戏数据中有手牌，数量:`, playerGameData.handCards.length);
+            preservedHandCards.push(...playerGameData.handCards.map(card => {
+              // 兼容 card.rank 和 card.value 两种情况
+              const cardValue = card.rank || card.value;
+              const cardKey = `${card.suit}_${cardValue}`;
+              const isVisible = player.openId === this.data.userInfo._openid && visibilityMap[cardKey] !== undefined ? 
+                              visibilityMap[cardKey] : (card.isVisible || false);
+              console.log(`应用手牌可见性: ${cardKey} = ${isVisible}`);
+              return {
+                ...card,
+                // 如果是当前玩家且之前看过牌，保持可见性
+                isVisible: isVisible
+              };
+            }));
+          } else {
+            // 如果游戏数据中没有手牌，保留原有手牌
+            console.log(`玩家 ${player.nickname} 游戏数据中没有手牌，保留原有手牌`);
+            preservedHandCards.push(...player.handCards);
+          }
+        } else if (playerGameData.handCards && playerGameData.handCards.length > 0) {
+          // 如果之前没有手牌，使用新的手牌
+          console.log(`玩家 ${player.nickname} 没有原始手牌，使用游戏数据中的手牌`);
+          preservedHandCards.push(...playerGameData.handCards);
         }
+        
+        // 确保保留玩家状态和下注信息
+        const updatedPlayer = {
+          ...player,
+          handCards: preservedHandCards.length > 0 ? preservedHandCards : player.handCards,
+          // 明确地保留currentBet和totalBet，如果游戏数据中没有这些字段，则使用原有值
+          currentBet: playerGameData.currentBet !== undefined ? playerGameData.currentBet : player.currentBet,
+          totalBet: playerGameData.totalBet !== undefined ? playerGameData.totalBet : player.totalBet,
+          status: playerGameData.status || player.status
+        };
+        
+        console.log(`更新后的玩家 ${player.nickname} 数据:`, 
+                  `状态=${updatedPlayer.status}, ` +
+                  `当前下注=${updatedPlayer.currentBet}, ` +
+                  `总下注=${updatedPlayer.totalBet}, ` +
+                  `手牌数量=${updatedPlayer.handCards ? updatedPlayer.handCards.length : 0}`);
+                  
+        return updatedPlayer;
+      } else {
+        console.log(`未找到玩家 ${player.nickname} 的游戏数据，保持原样`);
       }
       return player
     })
 
     // 判断当前是否轮到自己操作
-    const isCurrentPlayer = gameData.currentPlayerIndex !== undefined && 
-                           gameData.players[gameData.currentPlayerIndex]?.openId === this.data.userInfo.openId
+    let isCurrentPlayer = false;
+    
+    // 如果游戏状态为waiting（等待中），且当前用户是房主，则设置为当前玩家
+    if (this.data.gameStatus === 'waiting') {
+      // 判断当前用户是否是房主
+      const isOwner = updatedPlayers.length > 0 && 
+                     updatedPlayers[0].isOwner && 
+                     updatedPlayers[0].openId === this.data.userInfo._openid;
+      
+      // 在等待状态下，房主为当前玩家
+      isCurrentPlayer = isOwner;
+    } else if (gameData.status === 'playing') {
+      // 如果游戏已经开始，则根据currentPlayerIndex判断当前玩家
+      isCurrentPlayer = gameData.currentPlayerIndex !== undefined && 
+                       gameData.players[gameData.currentPlayerIndex]?.openId === this.data.userInfo._openid;
+    }
+
+    // 确保当前玩家在数组末尾（与formatPlayers保持一致）
+    const myOpenId = this.data.userInfo._openid;
+    const myIndex = updatedPlayers.findIndex(p => p.openId === myOpenId);
+    if (myIndex !== -1 && myIndex !== updatedPlayers.length - 1) {
+      const me = updatedPlayers.splice(myIndex, 1)[0];
+      updatedPlayers.push(me);
+    }
 
     // 获取活跃玩家（用于比牌选择）
     const activePlayers = updatedPlayers.filter(p => p.status === 'playing')
 
+    console.log('准备更新页面数据，玩家数量:', updatedPlayers.length);
     this.setData({
       players: updatedPlayers,
       isCurrentPlayer: isCurrentPlayer,
-      activePlayers: activePlayers
+      activePlayers: activePlayers,
+      gameStatus: gameData.status || this.data.gameStatus // 更新游戏状态
+    }, () => {
+      console.log('游戏数据更新完成，当前玩家列表:', JSON.stringify(this.data.players));
+      console.log('检查玩家状态和下注信息是否正确保留:');
+      this.data.players.forEach(player => {
+        console.log(`玩家 ${player.nickname}: 状态=${player.status}, 当前下注=${player.currentBet}, 总下注=${player.totalBet}, 手牌数量=${player.handCards ? player.handCards.length : 0}`);
+        if (player.handCards && player.handCards.length > 0) {
+          console.log(`玩家 ${player.nickname} 手牌可见性:`, player.handCards.map(card => card.isVisible));
+        }
+      });
+      // 强制刷新页面
+      this.forceUpdate();
     })
 
     // 如果游戏结束，显示结果
@@ -502,18 +690,18 @@ Page({
       console.log('玩家列表无效');
       return [];
     }
-    if (!this.data.userInfo || !this.data.userInfo.openId) {
+    if (!this.data.userInfo || !this.data.userInfo._openid) {
       console.log('当前用户信息不完整');
       return players.map(p => ({
         ...p,
         avatarUrl: p.avatarUrl || 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0',
         nickname: p.nickName || p.nickname || '玩家',
-        isCurrentPlayer: false
+        isDealer: false
       }));
     }
-    const myOpenId = this.data.userInfo.openId;
-    console.log('当前用户OpenID:', myOpenId);
-    // 只保留基础映射，不做任何 fileID 转换和字符串清理
+    const myOpenId = this.data.userInfo._openid;
+    const dealerId = (this.data.roomInfo && this.data.roomInfo.dealerId) ? this.data.roomInfo.dealerId : null;
+    console.log('当前用户OpenID:', myOpenId, '庄家ID:', dealerId);
     const processedPlayers = players.map(p => {
       let displayName = '玩家';
       if (p.nickName) {
@@ -525,7 +713,7 @@ Page({
         ...p,
         avatarUrl: p.avatarUrl || 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0',
         nickname: displayName,
-        isCurrentPlayer: p.openId === myOpenId
+        isDealer: dealerId && p.openId === dealerId
       };
     });
     const myIndex = processedPlayers.findIndex(p => p.openId === myOpenId);
@@ -671,13 +859,53 @@ Page({
 
   // 看牌按钮点击
   onCheck: function () {
+    wx.showLoading({
+      title: '看牌中...'
+    })
     wx.cloud.callFunction({
       name: 'gameLogic',
       data: {
         action: 'checkCards',
         roomId: this.data.roomId
       }
+    }).then(res => {
+      wx.hideLoading()
+      if (res.result && res.result.success) {
+        // 更新卡牌可见性
+        const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
+        if (myPlayerIndex !== -1 && res.result.cards) {
+          const updatedPlayers = [...this.data.players];
+          // 设置卡牌为可见
+          updatedPlayers[myPlayerIndex].handCards = res.result.cards.map(card => ({
+            ...card,
+            isVisible: true // 设置卡牌为可见
+          }));
+          
+          this.setData({
+            players: updatedPlayers
+          }, () => {
+            wx.showToast({
+              title: '看牌成功',
+              icon: 'success'
+            });
+            console.log('卡牌已设置为可见');
+          });
+        } else {
+          wx.showToast({
+            title: '看牌成功',
+            icon: 'success'
+          });
+          // 更新界面状态
+          this.forceUpdate();
+        }
+      } else {
+        wx.showToast({
+          title: res.result.message || '看牌失败',
+          icon: 'none'
+        })
+      }
     }).catch(err => {
+      wx.hideLoading()
       wx.showToast({
         title: '操作失败: ' + err.message,
         icon: 'none'
@@ -687,13 +915,57 @@ Page({
 
   // 跟注按钮点击
   onFollow: function () {
+    wx.showLoading({
+      title: '跟注中...'
+    })
     wx.cloud.callFunction({
       name: 'gameLogic',
       data: {
         action: 'followBet',
         roomId: this.data.roomId
       }
+    }).then(res => {
+      wx.hideLoading()
+      if (res.result && res.result.success) {
+        // 保留当前玩家的卡牌可见性
+        const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
+        if (myPlayerIndex !== -1) {
+          const updatedPlayers = [...this.data.players];
+          // 确保卡牌的isVisible属性保持不变
+          if (updatedPlayers[myPlayerIndex].handCards && updatedPlayers[myPlayerIndex].handCards.length > 0) {
+            // 保留原有的isVisible属性
+            const preservedCards = updatedPlayers[myPlayerIndex].handCards.map(card => ({
+              ...card,
+              isVisible: card.isVisible // 保留原有的可见性
+            }));
+            updatedPlayers[myPlayerIndex].handCards = preservedCards;
+          }
+          
+          this.setData({
+            players: updatedPlayers
+          }, () => {
+            wx.showToast({
+              title: '跟注成功',
+              icon: 'success'
+            });
+            console.log('跟注成功，保留卡牌可见性');
+          });
+        } else {
+          wx.showToast({
+            title: '跟注成功',
+            icon: 'success'
+          });
+          // 更新界面状态
+          this.forceUpdate();
+        }
+      } else {
+        wx.showToast({
+          title: res.result.message || '跟注失败',
+          icon: 'none'
+        })
+      }
     }).catch(err => {
+      wx.hideLoading()
       wx.showToast({
         title: '操作失败: ' + err.message,
         icon: 'none'
@@ -718,8 +990,10 @@ Page({
 
   // 确认加注
   confirmRaise: function () {
+    console.log('=== confirmRaise函数被调用 - 时间:', new Date().toLocaleString(), '===');
     const amount = parseInt(this.data.raiseAmount)
     if (isNaN(amount) || amount <= 0) {
+      console.error('加注金额无效:', this.data.raiseAmount);
       wx.showToast({
         title: '请输入有效金额',
         icon: 'none'
@@ -731,6 +1005,21 @@ Page({
       showRaiseInput: false
     })
 
+    console.log('准备调用raiseBet云函数，金额:', amount, '房间ID:', this.data.roomId);
+    console.log('当前玩家状态:', this.data.players.map(p => {
+      return {
+        nickname: p.nickname,
+        openId: p.openId,
+        status: p.status,
+        currentBet: p.currentBet,
+        totalBet: p.totalBet,
+        handCardsCount: p.handCards ? p.handCards.length : 0
+      };
+    }));
+    
+    wx.showLoading({
+      title: '加注中...'
+    })
     wx.cloud.callFunction({
       name: 'gameLogic',
       data: {
@@ -738,7 +1027,77 @@ Page({
         roomId: this.data.roomId,
         amount: amount
       }
+    }).then(res => {
+      wx.hideLoading()
+      console.log('=== raiseBet云函数返回结果 - 时间:', new Date().toLocaleString(), '===');
+      console.log('raiseBet云函数返回结果:', JSON.stringify(res.result));
+      if (res.result && res.result.success) {
+        console.log('加注成功，检查是否触发updateGameData函数');
+        console.log('当前游戏状态:', this.data.gameStatus);
+        console.log('当前游戏ID:', this.data.roomInfo ? this.data.roomInfo.currentGameId : 'undefined');
+        console.log('当前游戏监听器状态:', this.gameListener ? '已设置' : '未设置');
+        
+        // 保留当前玩家的卡牌可见性
+        const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
+        console.log('当前玩家openId:', this.data.userInfo._openid);
+        console.log('查找当前玩家结果:', myPlayerIndex !== -1 ? '找到' : '未找到');
+        
+        if (myPlayerIndex !== -1) {
+          console.log('找到当前玩家，索引:', myPlayerIndex);
+          console.log('当前玩家数据:', JSON.stringify(this.data.players[myPlayerIndex]));
+          
+          const updatedPlayers = [...this.data.players];
+          // 确保卡牌的isVisible属性保持不变
+          if (updatedPlayers[myPlayerIndex].handCards && updatedPlayers[myPlayerIndex].handCards.length > 0) {
+            console.log('当前玩家有手牌，数量:', updatedPlayers[myPlayerIndex].handCards.length);
+            console.log('手牌详情:', JSON.stringify(updatedPlayers[myPlayerIndex].handCards));
+            
+            // 保留原有的isVisible属性
+            const preservedCards = updatedPlayers[myPlayerIndex].handCards.map(card => {
+              const cardValue = card.rank || card.value;
+              const cardKey = `${card.suit}_${cardValue}`;
+              console.log(`保留手牌可见性: ${cardKey} = ${card.isVisible}`);
+              return {
+                ...card,
+                isVisible: card.isVisible // 保留原有的可见性
+              };
+            });
+            updatedPlayers[myPlayerIndex].handCards = preservedCards;
+            console.log('保留可见性后的手牌:', JSON.stringify(preservedCards));
+          } else {
+            console.log('当前玩家没有手牌或手牌为空');
+          }
+          
+          console.log('更新前的玩家数据:', JSON.stringify(this.data.players));
+          this.setData({
+            players: updatedPlayers
+          }, () => {
+            console.log('更新后的玩家数据:', JSON.stringify(this.data.players));
+            wx.showToast({
+              title: '加注成功',
+              icon: 'success'
+            });
+            console.log('加注成功，保留卡牌可见性');
+          });
+        } else {
+          console.log('未找到当前玩家，直接更新界面');
+          wx.showToast({
+            title: '加注成功',
+            icon: 'success'
+          });
+          // 更新界面状态
+          this.forceUpdate();
+        }
+      } else {
+        console.error('加注失败:', res.result.message);
+        wx.showToast({
+          title: res.result.message || '加注失败',
+          icon: 'none'
+        })
+      }
     }).catch(err => {
+      console.error('调用raiseBet云函数失败:', err);
+      wx.hideLoading()
       wx.showToast({
         title: '操作失败: ' + err.message,
         icon: 'none'
@@ -757,7 +1116,7 @@ Page({
   onCompare: function () {
     // 获取可比牌的玩家（状态为playing且不是自己）
     const comparablePlayers = this.data.players.filter(player => 
-      player.status === 'playing' && player.openId !== this.data.userInfo.openId
+      player.status === 'playing' && player.openId !== this.data.userInfo._openid
     )
 
     if (comparablePlayers.length === 0) {
@@ -782,6 +1141,9 @@ Page({
       showCompareSelect: false
     })
 
+    wx.showLoading({
+      title: '比牌中...'
+    })
     wx.cloud.callFunction({
       name: 'gameLogic',
       data: {
@@ -789,7 +1151,48 @@ Page({
         roomId: this.data.roomId,
         targetPlayerId: targetPlayerId
       }
+    }).then(res => {
+      wx.hideLoading()
+      if (res.result && res.result.success) {
+        // 保留当前玩家的卡牌可见性
+        const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
+        if (myPlayerIndex !== -1) {
+          const updatedPlayers = [...this.data.players];
+          // 确保卡牌的isVisible属性保持不变
+          if (updatedPlayers[myPlayerIndex].handCards && updatedPlayers[myPlayerIndex].handCards.length > 0) {
+            // 保留原有的isVisible属性
+            const preservedCards = updatedPlayers[myPlayerIndex].handCards.map(card => ({
+              ...card,
+              isVisible: card.isVisible // 保留原有的可见性
+            }));
+            updatedPlayers[myPlayerIndex].handCards = preservedCards;
+          }
+          
+          this.setData({
+            players: updatedPlayers
+          }, () => {
+            wx.showToast({
+              title: '比牌成功',
+              icon: 'success'
+            });
+            console.log('比牌成功，保留卡牌可见性');
+          });
+        } else {
+          wx.showToast({
+            title: '比牌成功',
+            icon: 'success'
+          });
+          // 更新界面状态
+          this.forceUpdate();
+        }
+      } else {
+        wx.showToast({
+          title: res.result.message || '比牌失败',
+          icon: 'none'
+        })
+      }
     }).catch(err => {
+      wx.hideLoading()
       wx.showToast({
         title: '操作失败: ' + err.message,
         icon: 'none'
@@ -811,13 +1214,57 @@ Page({
       content: '确定要弃牌吗？弃牌后将退出本局游戏。',
       success: (res) => {
         if (res.confirm) {
+          wx.showLoading({
+            title: '弃牌中...'
+          })
           wx.cloud.callFunction({
             name: 'gameLogic',
             data: {
               action: 'foldCards',
               roomId: this.data.roomId
             }
+          }).then(res => {
+            wx.hideLoading()
+            if (res.result && res.result.success) {
+              // 保留当前玩家的卡牌可见性
+              const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
+              if (myPlayerIndex !== -1) {
+                const updatedPlayers = [...this.data.players];
+                // 确保卡牌的isVisible属性保持不变
+                if (updatedPlayers[myPlayerIndex].handCards && updatedPlayers[myPlayerIndex].handCards.length > 0) {
+                  // 保留原有的isVisible属性
+                  const preservedCards = updatedPlayers[myPlayerIndex].handCards.map(card => ({
+                    ...card,
+                    isVisible: card.isVisible // 保留原有的可见性
+                  }));
+                  updatedPlayers[myPlayerIndex].handCards = preservedCards;
+                }
+                
+                this.setData({
+                  players: updatedPlayers
+                }, () => {
+                  wx.showToast({
+                    title: '弃牌成功',
+                    icon: 'success'
+                  });
+                  console.log('弃牌成功，保留卡牌可见性');
+                });
+              } else {
+                wx.showToast({
+                  title: '弃牌成功',
+                  icon: 'success'
+                });
+                // 更新界面状态
+                this.forceUpdate();
+              }
+            } else {
+              wx.showToast({
+                title: res.result.message || '弃牌失败',
+                icon: 'none'
+              })
+            }
           }).catch(err => {
+            wx.hideLoading()
             wx.showToast({
               title: '操作失败: ' + err.message,
               icon: 'none'
@@ -856,7 +1303,7 @@ Page({
     const newMsg = {
       nickname: userInfo.nickName,
       avatarUrl: userInfo.avatarUrl,
-      openId: userInfo.openId,
+      openId: userInfo._openid,
       content: content,
       time: now
     };

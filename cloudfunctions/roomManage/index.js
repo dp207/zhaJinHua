@@ -34,7 +34,8 @@ async function createRoom(event, context) {
 
   // 生成唯一的房间号
   let roomId = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const characters = '000000';
+  //const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   for (let i = 0; i < 6; i++) {
     roomId += characters.charAt(Math.floor(Math.random() * characters.length));
   }
@@ -52,6 +53,7 @@ async function createRoom(event, context) {
       baseScore: baseScore,
       initialScore: initialScore, // 新增字段，确保房间信息包含初始积分
       owner: openId,
+      dealerId: openId, // 新增字段，庄家初始为房主
       players: [{
         openId: openId,
         nickname: userInfo ? userInfo.nickName : '玩家',
@@ -60,7 +62,6 @@ async function createRoom(event, context) {
         isOwner: true,
         isReady: false // 房主默认未准备
       }],
-
       status: 'waiting',
       createTime: db.serverDate()
     };

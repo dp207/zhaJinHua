@@ -17,64 +17,96 @@
 
       <!-- 玩家区域 -->
       <view class="players-container">
+        <!-- 其他玩家 - 确保当前玩家不在此区域显示 -->
         <block wx:for="{{players}}" wx:key="openId">
-          <view class="player {{item.isCurrentPlayer ? 'current-player' : ''}}">
+          <view class="player {{item.isDealer ? 'dealer-player' : ''}}" wx:if="{{item.openId !== userInfo._openid}}">
             <image class="avatar" src="{{item.avatarUrl}}"></image>
             <text class="nickname">{{item.nickname}}</text>
-            <text class="score">积分: {{item.score}}</text>
+            <view class="player-info">
+              <text class="score">积分：{{item.score}}</text>
+              <text class="bet" wx:if="{{item.currentBet > 0}}">下注：{{item.currentBet}}</text>
+            </view>
             <text class="status">{{item.status}}</text>
-            <text class="bet" wx:if="{{item.currentBet > 0}}">下注: {{item.currentBet}}</text>
-            
+            <text class="dealer-badge" wx:if="{{item.isDealer}}">庄家</text>
             <!-- 玩家手牌 -->
             <view class="hand-cards" wx:if="{{item.handCards && item.handCards.length > 0}}">
               <block wx:for="{{item.handCards}}" wx:for-item="card" wx:key="index">
-                <view class="card {{card.isVisible || item.openId === userInfo.openId ? 'visible' : 'hidden'}}">
-                  <text wx:if="{{card.isVisible || item.openId === userInfo.openId}}">{{card.suit}}{{card.value}}</text>
+                <view class="card {{card.isVisible ? 'visible' : 'hidden'}}">
+                  <text wx:if="{{card.isVisible}}">{{card.suit}}{{card.value}}</text>
                 </view>
               </block>
             </view>
           </view>
         </block>
       </view>
-    </view>
-
-    <!-- 操作区域 -->
-    <view class="action-area" wx:if="{{gameStatus === 'playing' && isCurrentPlayer}}">
-      <button class="action-btn" bindtap="onCheck">看牌</button>
-      <button class="action-btn" bindtap="onFollow">跟注</button>
-      <button class="action-btn" bindtap="onRaise">加注</button>
-      <button class="action-btn" bindtap="onCompare">比牌</button>
-      <button class="action-btn" bindtap="onFold">弃牌</button>
-    </view>
-
-    <!-- 准备按钮 -->
-    <view class="ready-area" wx:if="{{gameStatus === 'waiting'}}">
-      <button class="ready-btn" bindtap="onPlayerReady">{{isReady ? '取消准备' : '准备'}}</button>
-    </view>
-
-    <!-- 加注输入框 -->
-    <view class="raise-input" wx:if="{{showRaiseInput}}">
-      <input type="number" placeholder="请输入加注金额" bindinput="onRaiseInputChange" value="{{raiseAmount}}"/>
-      <button bindtap="confirmRaise">确定</button>
-      <button bindtap="cancelRaise">取消</button>
-    </view>
-
-    <!-- 比牌选择 -->
-    <view class="compare-select" wx:if="{{showCompareSelect}}">
-      <text>选择要比牌的玩家:</text>
-      <view class="compare-players">
-        <block wx:for="{{activePlayers}}" wx:key="openId">
-          <button wx:if="{{item.openId !== userInfo.openId}}" bindtap="confirmCompare" data-player-id="{{item.openId}}">{{item.nickname}}</button>
+      
+      <!-- 当前玩家牌区域 - 只显示牌，不显示头像和昵称 -->
+      <view class="current-player-area" wx:if="{{gameStatus === 'playing'}}">
+        <block wx:for="{{players}}" wx:key="openId">
+          <block wx:if="{{item.openId === userInfo._openid}}">
+            <!-- 当前玩家信息显示在牌上方，不显示昵称 -->
+            <view class="current-player-info">
+              <text class="current-player-score">积分：{{item.score}}</text>
+              <text class="current-player-bet" >下注：{{item.currentBet}}</text>
+              <text class="current-player-status">{{item.status}}</text>
+            </view>
+            <!-- 只显示当前玩家的牌，没看牌前显示牌背 -->
+            <view class="current-player-cards" wx:if="{{item.handCards && item.handCards.length > 0}}">
+              <block wx:for="{{item.handCards}}" wx:for-item="card" wx:key="index">
+                <view class="current-player-card {{card.isVisible ? 'visible' : 'hidden'}}">
+                  <text wx:if="{{card.isVisible}}">{{card.suit}}{{card.value}}</text>
+                </view>
+              </block>
+            </view>
+          </block>
         </block>
       </view>
-      <button bindtap="cancelCompare">取消</button>
+    </view>
+
+  </view>
+  
+  <!-- 操作区域 - 两行按钮布局 -->
+  <view class="action-area" wx:if="{{gameStatus === 'playing'}}">
+    <view class="action-row">
+      <!-- 第一行按钮 -->
+      <button class="action-btn" bindtap="onCheck">看牌</button>
+      <button class="action-btn" bindtap="onFold">弃牌</button>
+      <button class="action-btn" bindtap="onFollow" wx:if="{{isCurrentPlayer}}">跟注</button>
+    </view>
+    <view class="action-row">
+      <!-- 第二行按钮 -->
+      <button class="action-btn" bindtap="onRaise" wx:if="{{isCurrentPlayer}}">加注</button>
+      <button class="action-btn" bindtap="onCompare" wx:if="{{isCurrentPlayer}}">比牌</button>
     </view>
   </view>
+  
+  <!-- 准备按钮 -->
+  <view class="ready-area" wx:if="{{gameStatus === 'waiting'}}">
+    <button class="ready-btn" bindtap="onPlayerReady">{{isReady ? '取消准备' : '准备'}}</button>
+  </view>
 
-  <!-- 聊天区域 -->
-  <view class="chat-area">
+  <!-- 加注输入框 -->
+  <view class="raise-input" wx:if="{{showRaiseInput}}">
+    <input type="number" placeholder="请输入加注金额" bindinput="onRaiseInputChange" value="{{raiseAmount}}"/>
+    <button bindtap="confirmRaise">确定</button>
+    <button bindtap="cancelRaise">取消</button>
+  </view>
+
+  <!-- 比牌选择 -->
+  <view class="compare-select" wx:if="{{showCompareSelect}}">
+    <text>选择要比牌的玩家:</text>
+    <view class="compare-players">
+      <block wx:for="{{activePlayers}}" wx:key="openId">
+        <button wx:if="{{item.openId !== userInfo._openid}}" bindtap="confirmCompare" data-player-id="{{item.openId}}">{{item.nickname}}</button>
+      </block>
+    </view>
+    <button bindtap="cancelCompare">取消</button>
+  </view>
+    
+  <!-- 聊天区域 - 右下角侧边栏 -->
+  <view class="chat-area-sidebar {{chatCollapsed ? 'collapsed' : ''}}">
     <view class="chat-header" bindtap="toggleChatCollapse">
-      <text>{{chatCollapsed ? '展开聊天' : '收起聊天'}}</text>
+      <text>{{chatCollapsed ? '聊天' : '收起'}}</text>
     </view>
     <view class="chat-messages" wx:if="{{!chatCollapsed}}">
       <block wx:for="{{chatMessages}}" wx:key="index">

@@ -89,34 +89,57 @@
   align-items: center;
 }
 
-/* 根据玩家索引定位 - 当前用户始终在底部，其他玩家顺时针排列 */
-.players-container .player.current-player {
-  bottom: 20rpx;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-/* 其他玩家按顺时针排列 */
-.players-container .player:not(.current-player):nth-of-type(1) {
+/* U型布局 - 其他玩家在两侧和顶部排列 */
+/* 左侧玩家 */
+.players-container .player:nth-of-type(1) {
   top: 50%;
   left: 20rpx;
   transform: translateY(-50%);
 }
 
-.players-container .player:not(.current-player):nth-of-type(2) {
+/* 顶部左侧玩家 */
+.players-container .player:nth-of-type(2) {
   top: 20rpx;
-  left: 50%;
+  left: 30%;
   transform: translateX(-50%);
 }
 
-.players-container .player:not(.current-player):nth-of-type(3) {
+/* 顶部右侧玩家 */
+.players-container .player:nth-of-type(3) {
+  top: 20rpx;
+  left: 70%;
+  transform: translateX(-50%);
+}
+
+/* 右侧玩家 */
+.players-container .player:nth-of-type(4) {
   top: 50%;
   right: 20rpx;
   transform: translateY(-50%);
 }
 
-.current-player {
-  border: 4rpx solid #ffcc00; /* 金色边框标识当前玩家 */
+/* 第5个玩家 */
+.players-container .player:nth-of-type(5) {
+  top: 20rpx;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 当前玩家区域 - 只显示牌和信息，不显示头像和昵称 */
+.current-player-area {
+  position: absolute;
+  bottom: 20%; /* 使用百分比单位，自适应不同屏幕尺寸 */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 1000%; /* 增加宽度以便更好地显示内容 */
+  z-index: 6; /* 提高z-index确保在操作区域上层 */
+  background-color: rgba(0, 0, 0, 0.5); /* 增加背景色透明度以更好地区分 */
+  border-radius: 15rpx; /* 增加圆角 */
+  padding: 15rpx; /* 增加内边距 */
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3); /* 添加阴影效果 */
 }
 
 .avatar {
@@ -135,9 +158,30 @@
   max-width: 160rpx;
 }
 
+.player {
+  position: absolute;
+  width: 180rpx;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 10rpx;
+  padding: 10rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 玩家信息区域 - 横向显示积分和下注 */
+.player-info {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
 .score, .status, .bet {
   font-size: 22rpx;
-  margin-bottom: 5rpx;
+  margin: 0 5rpx 5rpx 5rpx;
+  white-space: nowrap;
 }
 
 .status {
@@ -174,24 +218,113 @@
   background-size: 10rpx 10rpx;
 }
 
-/* 操作区域 */
+/* 当前玩家信息和牌 */
+.current-player-info {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 12rpx;
+  padding: 12rpx 24rpx;
+  margin-bottom: 15rpx; /* 改为下边距，因为现在信息在上方 */
+  width: 95%;
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3); /* 添加阴影效果 */
+}
+
+.current-player-score, 
+.current-player-bet, 
+.current-player-status {
+  font-size: 23rpx;
+  margin: 0 15rpx;
+  font-weight: 500; /* 稍微加粗字体 */
+}
+
+.current-player-status {
+  color: #ffcc00; /* 金色状态文字 */
+}
+
+.current-player-bet {
+  color: #ff6666; /* 红色下注文字 */
+}
+
+.current-player-cards {
+  display: flex;
+  margin-top: 10rpx;
+  margin-bottom: 10rpx;
+  justify-content: center;
+}
+
+.current-player-card {
+  width: 50rpx; /* 与其他玩家牌宽度一致 */
+  height: 70rpx; /* 与其他玩家牌高度一致 */
+  background-color: #ffffff;
+  border-radius: 5rpx; /* 与其他玩家牌圆角一致 */
+  margin: 0 2rpx; /* 与其他玩家牌间距一致 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20rpx; /* 与其他玩家牌字体大小一致 */
+  color: #000000;
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3); /* 与其他玩家牌阴影一致 */
+  position: relative;
+}
+
+.current-player-card.hidden {
+  background-color: #b71c1c; /* 红色牌背 */
+  background-image: linear-gradient(45deg, #b71c1c 25%, #d32f2f 25%, #d32f2f 50%, #b71c1c 50%, #b71c1c 75%, #d32f2f 75%, #d32f2f 100%);
+  background-size: 10rpx 10rpx; /* 与其他玩家牌背图案大小一致 */
+}
+
+.current-player-card.hidden text {
+  display: none; /* 隐藏牌背文字，与其他玩家牌一致 */
+}
+
+/* 操作区域 - 两行按钮布局 */
 .action-area {
   display: flex;
-  justify-content: space-around;
-  padding: 20rpx;
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 10rpx;
-  margin-top: 20rpx;
+  flex-direction: column;
+  justify-content: center;
+  padding: 15rpx;
+  background-color: rgba(0, 0, 0, 0.6); /* 增加背景色透明度 */
+  border-radius: 15rpx; /* 增加圆角 */
+  margin-top: 10rpx;
+  width: 90%;
+  position: absolute;
+  bottom: 5%; /* 使用百分比单位，自适应不同屏幕尺寸 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3); /* 添加阴影效果 */
+}
+
+/* 操作按钮行 */
+.action-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 5rpx 0;
 }
 
 .action-btn {
-  font-size: 28rpx;
-  padding: 10rpx 20rpx;
+  font-size: 28rpx; /* 增加字体大小 */
+  padding: 12rpx 24rpx; /* 增加内边距 */
   background-color: #d4af37; /* 金色按钮 */
   color: #000000;
-  border-radius: 10rpx;
-  margin: 0 5rpx;
-  min-width: 120rpx;
+  border-radius: 15rpx; /* 增加圆角 */
+  margin: 8rpx 15rpx; /* 增加按钮间距 */
+  min-width: 120rpx; /* 增加最小宽度 */
+  line-height: 1.5;
+  height: auto;
+  font-weight: bold; /* 加粗字体 */
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.4); /* 增强阴影效果 */
+  transition: all 0.2s; /* 添加过渡效果 */
+}
+
+.action-btn[disabled] {
+  background-color: #a08a2b; /* 暗金色按钮 */
+  color: #666666;
+  opacity: 0.7;
 }
 
 /* 准备按钮区域 */
@@ -199,6 +332,12 @@
   display: flex;
   justify-content: center;
   padding: 20rpx;
+  position: absolute;
+  bottom: 30rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  z-index: 5;
 }
 
 .ready-btn {
@@ -212,7 +351,7 @@
 /* 加注输入框 */
 .raise-input {
   position: absolute;
-  bottom: 150rpx;
+  bottom: 250rpx;
   left: 50%;
   transform: translateX(-50%);
   background-color: rgba(0, 0, 0, 0.8);
@@ -222,7 +361,7 @@
   flex-direction: column;
   align-items: center;
   width: 80%;
-  z-index: 10;
+  z-index: 20;
 }
 
 .raise-input input {
@@ -243,7 +382,7 @@
 /* 比牌选择 */
 .compare-select {
   position: absolute;
-  bottom: 150rpx;
+  bottom: 250rpx;
   left: 50%;
   transform: translateX(-50%);
   background-color: rgba(0, 0, 0, 0.8);
@@ -253,7 +392,7 @@
   flex-direction: column;
   align-items: center;
   width: 80%;
-  z-index: 10;
+  z-index: 20;
 }
 
 .compare-select text {
@@ -274,16 +413,22 @@
   padding: 10rpx 20rpx;
 }
 
-/* 聊天区域 */
-.chat-area {
-  position: absolute;
-  left: 0;
+/* 聊天区域 - 右下角侧边栏 */
+.chat-area-sidebar {
+  position: fixed;
   right: 0;
-  bottom: 0;
+  bottom: 120rpx;
+  width: 400rpx;
   background: rgba(0,0,0,0.7);
   border-top-left-radius: 20rpx;
-  border-top-right-radius: 20rpx;
+  border-bottom-left-radius: 20rpx;
   padding: 10rpx 0 0 0;
+  z-index: 100;
+  transition: transform 0.3s ease;
+}
+
+.chat-area-sidebar.collapsed {
+  transform: translateX(calc(100% - 80rpx));
 }
 .chat-header {
   text-align: center;
@@ -292,8 +437,9 @@
   font-size: 26rpx;
   background: rgba(0,0,0,0.3);
   border-top-left-radius: 20rpx;
-  border-top-right-radius: 20rpx;
   cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
 }
 .chat-messages {
   max-height: 220rpx;
