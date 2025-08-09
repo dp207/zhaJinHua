@@ -7,7 +7,7 @@ Page({
     timer: null,
     showCreateRoomModal: false,
     showJoinRoomModal: false,
-    roomType: 'public', // 默认公开房间
+    roomType: 'private', // 默认私人房间
     baseScore: 10, // 默认底分
     initialScore: 1000, // 默认初始积分
     inputRoomId: '' // 输入的房间号
@@ -19,9 +19,13 @@ Page({
     }
   },
   onMatchTap() {
-    if (this.data.matching) return;
-    this.setData({ matching: true, countdown: 30, timeout: false });
-    this.startCountdown();
+    // 直接提示暂未开放
+    wx.showToast({
+      title: '暂未开放',
+      icon: 'none',
+      duration: 2000
+    });
+    return;
   },
   startCountdown() {
     const timer = setInterval(() => {
@@ -75,9 +79,19 @@ Page({
   },
 
   onRoomTypeChange(e) {
+    // 始终保持私人类型
     this.setData({
-      roomType: e.detail.value
+      roomType: 'private'
     });
+    
+    // 如果尝试选择公开类型，提示用户
+    if (e.detail.value === 'public') {
+      wx.showToast({
+        title: '公开房间暂不可用',
+        icon: 'none',
+        duration: 2000
+      });
+    }
   },
 
   onBaseScoreInput(e) {
@@ -153,7 +167,9 @@ Page({
   },
   
   async confirmCreateRoom() {
-    const { roomType, baseScore, initialScore, userInfo } = this.data;
+    // 强制使用私人类型
+    const { baseScore, initialScore, userInfo } = this.data;
+    const roomType = 'private';
 
     if (!baseScore || baseScore <= 0) {
       wx.showToast({
@@ -164,7 +180,7 @@ Page({
     }
 
     console.log('confirmCreateRoom+++:', roomType, baseScore, initialScore, userInfo)
-    if (roomType === 'private' && (!initialScore || initialScore <= 0)) {
+    if (!initialScore || initialScore <= 0) {
       wx.showToast({
         title: '私人房间初始积分不能为0或负数',
         icon: 'none'

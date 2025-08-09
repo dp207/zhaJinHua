@@ -1,13 +1,16 @@
-<view class="lobby-header">
-  <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" />
-  <text class="nickname">{{userInfo.nickName}}</text>
-</view>
+<view class="page-background">
+  <view class="lobby-header">
+    <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" />
+    <text class="nickname">{{userInfo.nickName}}</text>
+  </view>
 
-<!-- 其余大厅内容可继续补充 -->
-<view class="lobby-container">
-  <button bindtap="onMatchTap" class="match-btn">快速匹配</button>
-  <button bindtap="onCreateRoomTap" class="create-room-btn">创建房间</button>
-  <button bindtap="onJoinRoomTap" class="join-room-btn">加入房间</button>
+  <!-- 其余大厅内容可继续补充 -->
+  <view class="lobby-container">
+    <view class="btn-container">
+      <button bindtap="onMatchTap" class="match-btn">快速匹配</button>
+      <button bindtap="onCreateRoomTap" class="create-room-btn">创建房间</button>
+      <button bindtap="onJoinRoomTap" class="join-room-btn">加入房间</button>
+    </view>
 
   <view class="modal-mask" wx:if="{{showCreateRoomModal}}" catchtap="hideCreateRoomModal"></view>
   <view class="modal-dialog" wx:if="{{showCreateRoomModal}}" catchtap="doNothing">
@@ -16,7 +19,7 @@
       <view class="form-item">
         <text class="label">房间类型:</text>
         <radio-group bindchange="onRoomTypeChange" catchtap="doNothing">
-          <label class="radio" catchtap="doNothing"><radio value="public" checked="{{roomType === 'public'}}" catchtap="doNothing"/>公开</label>
+          <label class="radio disabled" catchtap="doNothing"><radio value="public" checked="{{roomType === 'public'}}" disabled="true" catchtap="doNothing"/>公开(暂不可用)</label>
           <label class="radio" catchtap="doNothing"><radio value="private" checked="{{roomType === 'private'}}" catchtap="doNothing"/>私人</label>
         </radio-group>
       </view>
@@ -55,5 +58,6 @@
       <button class="btn-cancel" catchtap="hideJoinRoomModal">取消</button>
       <button class="btn-confirm" catchtap="confirmJoinRoom">加入</button>
     </view>
+  </view>
   </view>
 </view>

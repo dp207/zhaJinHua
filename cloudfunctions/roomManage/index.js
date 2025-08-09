@@ -34,7 +34,7 @@ async function createRoom(event, context) {
 
   // 生成唯一的房间号
   let roomId = '';
-  const characters = '000000';
+  const characters = '0123456789';
   //const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   for (let i = 0; i < 6; i++) {
     roomId += characters.charAt(Math.floor(Math.random() * characters.length));

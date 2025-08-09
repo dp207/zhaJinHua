@@ -1,3 +1,21 @@
+.page-background {
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.lobby-container {
+  padding: 30rpx;
+}
+
+.btn-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 200rpx;
+}
+
 .lobby-header {
   position: absolute;
   top: 20rpx;
@@ -5,33 +23,46 @@
   display: flex;
   align-items: center;
 }
+
 .avatar {
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
   margin-right: 12rpx;
 }
+
 .nickname {
   font-size: 28rpx;
   color: #333;
   font-weight: bold;
 }
 
+.match-btn {
+  width: 80%;
+  background-color: #FF9800;
+  color: white;
+  padding: 20rpx 0;
+  border-radius: 10rpx;
+  font-size: 32rpx;
+  margin-bottom: 30rpx;
+}
+
 .create-room-btn {
-  margin-top: 20rpx;
+  width: 80%;
   background-color: #4CAF50;
   color: white;
-  padding: 10rpx 20rpx;
-  border-radius: 5rpx;
+  padding: 20rpx 0;
+  border-radius: 10rpx;
   font-size: 32rpx;
+  margin-bottom: 30rpx;
 }
 
 .join-room-btn {
-  margin-top: 20rpx;
+  width: 80%;
   background-color: #2196F3;
   color: white;
-  padding: 10rpx 20rpx;
-  border-radius: 5rpx;
+  padding: 20rpx 0;
+  border-radius: 10rpx;
   font-size: 32rpx;
 }
 
@@ -97,6 +128,11 @@
 .form-item radio-group {
   display: flex;
   flex: 1;
+}
+
+.radio.disabled {
+  color: #999;
+  opacity: 0.7;
 }
 
 .form-item .radio {
