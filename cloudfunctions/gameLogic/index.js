@@ -149,6 +149,21 @@ async function startGame(roomId, players, baseScore) {
       });
     }
     
+    // 获取房间信息以确定庄家
+    const roomRes = await db.collection('rooms').where({ roomId: roomId }).get();
+    const room = roomRes.data[0];
+    
+    // 确定庄家索引，如果没有庄家或找不到庄家，则默认为0
+    let dealerIndex = 0;
+    if (room.dealerId) {
+      const dealerPlayerIndex = gamePlayers.findIndex(p => p.openId === room.dealerId);
+      if (dealerPlayerIndex !== -1) {
+        dealerIndex = dealerPlayerIndex;
+      }
+    }
+    
+    console.log('开始游戏: 庄家ID =', room.dealerId, '庄家索引 =', dealerIndex);
+    
     // 创建游戏记录
     await db.collection('games').add({
       data: {
@@ -156,7 +171,7 @@ async function startGame(roomId, players, baseScore) {
         gameId: gameId,
         players: gamePlayers,
         totalPot: totalPot,
-        currentPlayerIndex: 0, // 从第一个玩家开始
+        currentPlayerIndex: dealerIndex, // 从庄家开始
         round: 1,
         status: 'playing',
         createTime: db.serverDate(),
@@ -304,12 +319,15 @@ async function followBet(event, openId) {
     });
     
     // 更新游戏数据
+    // 计算下一个有效玩家的索引（排除状态为fold的玩家）
+    const nextPlayerIndex = getNextValidPlayerIndex(game.players, playerIndex);
+    
     await db.collection('games').where({ gameId: room.currentGameId }).update({
       data: {
         [`players.${playerIndex}.currentBet`]: maxBet,
         [`players.${playerIndex}.totalBet`]: player.totalBet + betAmount,
         totalPot: _.inc(betAmount),
-        currentPlayerIndex: (playerIndex + 1) % game.players.length,
+        currentPlayerIndex: nextPlayerIndex,
         lastActionTime: db.serverDate()
       }
     });
@@ -397,12 +415,15 @@ async function raiseBet(event, openId) {
     });
     
     // 更新游戏数据
+    // 计算下一个有效玩家的索引（排除状态为fold的玩家）
+    const nextPlayerIndex = getNextValidPlayerIndex(game.players, playerIndex);
+    
     await db.collection('games').where({ gameId: room.currentGameId }).update({
       data: {
         [`players.${playerIndex}.currentBet`]: newBet,
         [`players.${playerIndex}.totalBet`]: player.totalBet + raiseAmount,
         totalPot: _.inc(raiseAmount),
-        currentPlayerIndex: (playerIndex + 1) % game.players.length,
+        currentPlayerIndex: nextPlayerIndex,
         lastActionTime: db.serverDate()
       }
     });
@@ -482,10 +503,17 @@ async function compareCards(event, openId) {
     const loser = game.players[loserIndex];
     
     // 更新游戏数据，将输家状态设为out
+    // 先更新玩家状态
+    const updatedPlayers = [...game.players];
+    updatedPlayers[loserIndex].status = 'out';
+    
+    // 计算下一个有效玩家的索引（排除状态为fold和out的玩家）
+    const nextPlayerIndex = getNextValidPlayerIndex(updatedPlayers, playerIndex);
+    
     await db.collection('games').where({ gameId: room.currentGameId }).update({
       data: {
         [`players.${loserIndex}.status`]: 'out',
-        currentPlayerIndex: (playerIndex + 1) % game.players.length,
+        currentPlayerIndex: nextPlayerIndex,
         lastActionTime: db.serverDate()
       }
     });
@@ -546,10 +574,17 @@ async function foldCards(event, openId) {
     }
     
     // 更新游戏数据
+    // 先将当前玩家状态设为fold
+    const updatedPlayers = [...game.players];
+    updatedPlayers[playerIndex].status = 'fold';
+    
+    // 计算下一个有效玩家的索引（排除状态为fold的玩家）
+    const nextPlayerIndex = getNextValidPlayerIndex(updatedPlayers, playerIndex);
+    
     await db.collection('games').where({ gameId: room.currentGameId }).update({
       data: {
         [`players.${playerIndex}.status`]: 'fold',
-        currentPlayerIndex: (playerIndex + 1) % game.players.length,
+        currentPlayerIndex: nextPlayerIndex,
         lastActionTime: db.serverDate()
       }
     });
@@ -562,6 +597,27 @@ async function foldCards(event, openId) {
     console.error('弃牌错误:', error);
     return { success: false, message: error.message };
   }
+}
+
+// 获取下一个有效玩家的索引（排除状态为fold或out的玩家）
+function getNextValidPlayerIndex(players, currentIndex) {
+  const playerCount = players.length;
+  let nextIndex = (currentIndex + 1) % playerCount;
+  
+  // 循环查找下一个状态是playing的玩家
+  let loopCount = 0;
+  while (loopCount < playerCount) {
+    if (players[nextIndex].status === 'playing') {
+      return nextIndex;
+    }
+    nextIndex = (nextIndex + 1) % playerCount;
+    loopCount++;
+  }
+  
+  // 如果没有找到状态为playing的玩家，检查游戏是否应该结束
+  // 这种情况通常不会发生，因为checkGameEnd函数会在适当的时候结束游戏
+  // 但为了安全起见，我们返回原索引
+  return currentIndex;
 }
 
 // 检查游戏是否结束

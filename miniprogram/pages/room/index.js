@@ -500,29 +500,26 @@ Page({
             });
           }
           
-          if (snapshot.type === 'init' || snapshot.type === 'update') {
-            console.log('游戏数据初始化或更新, type:', snapshot.type);
-            if (!snapshot.docs || snapshot.docs.length === 0) {
-              console.error('游戏数据更新: 没有找到文档数据');
-              return;
-            }
+          // 修改逻辑，不再严格检查snapshot.type，只要有docs数据就处理
+          console.log('游戏数据变化, type:', snapshot.type || 'undefined');
+          if (!snapshot.docs || snapshot.docs.length === 0) {
+            console.error('游戏数据更新: 没有找到文档数据');
+            return;
+          }
+          
+          console.log('snapshot.docs长度:', snapshot.docs.length);
+          const gameData = snapshot.docs[0];
+          if (gameData) {
+            console.log('游戏数据更新，准备调用updateGameData函数');
+            console.log('游戏数据ID:', gameData._id);
+            console.log('游戏状态:', gameData.status);
+            console.log('当前玩家索引:', gameData.currentPlayerIndex);
+            console.log('玩家数量:', gameData.players ? gameData.players.length : 0);
             
-            console.log('snapshot.docs长度:', snapshot.docs.length);
-            const gameData = snapshot.docs[0];
-            if (gameData) {
-              console.log('游戏数据更新，准备调用updateGameData函数');
-              console.log('游戏数据ID:', gameData._id);
-              console.log('游戏状态:', gameData.status);
-              console.log('当前玩家索引:', gameData.currentPlayerIndex);
-              console.log('玩家数量:', gameData.players ? gameData.players.length : 0);
-              
-              // 更新游戏相关数据
-              this.updateGameData(gameData);
-            } else {
-              console.error('游戏数据为空');
-            }
+            // 更新游戏相关数据
+            this.updateGameData(gameData);
           } else {
-            console.log('游戏数据变化类型不是init或update，不处理');
+            console.error('游戏数据为空');
           }
         },
         onError: err => {
@@ -613,6 +610,7 @@ Page({
           // 明确地保留currentBet和totalBet，如果游戏数据中没有这些字段，则使用原有值
           currentBet: playerGameData.currentBet !== undefined ? playerGameData.currentBet : player.currentBet,
           totalBet: playerGameData.totalBet !== undefined ? playerGameData.totalBet : player.totalBet,
+          // 确保从游戏数据中获取最新的玩家状态
           status: playerGameData.status || player.status
         };
         
@@ -1274,6 +1272,12 @@ Page({
                     icon: 'success'
                   });
                   console.log('弃牌成功，已将玩家状态更新为fold，保留卡牌可见性');
+                  
+                  // 弃牌后始终重新设置游戏监听器，确保能获取最新游戏状态
+                  if (this.data.roomInfo && this.data.roomInfo.currentGameId) {
+                    console.log('弃牌后重新设置游戏监听器');
+                    this.setupGameListener(this.data.roomInfo.currentGameId);
+                  }
                 });
               } else {
                 wx.showToast({

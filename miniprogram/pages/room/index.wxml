@@ -47,7 +47,7 @@
             <!-- 当前玩家信息显示在牌上方，不显示昵称 -->
             <view class="current-player-info">
               <text class="current-player-score">积分：{{item.score}}</text>
-              <text class="current-player-bet" >下注：{{item.currentBet}}</text>
+              <text class="current-player-bet" wx:if="{{item.currentBet > 0}}">下注：{{item.currentBet}}</text>
               <text class="current-player-status">{{item.status}}</text>
             </view>
             <!-- 只显示当前玩家的牌，没看牌前显示牌背 -->
@@ -67,17 +67,24 @@
   
   <!-- 操作区域 - 两行按钮布局 -->
   <view class="action-area" wx:if="{{gameStatus === 'playing'}}">
-    <view class="action-row">
-      <!-- 第一行按钮 -->
-      <button class="action-btn" bindtap="onCheck">看牌</button>
-      <button class="action-btn" bindtap="onFold">弃牌</button>
-      <button class="action-btn" bindtap="onFollow" wx:if="{{isCurrentPlayer}}">跟注</button>
+    <!-- 当前玩家已弃牌，显示准备按钮 -->
+    <view class="ready-area" wx:if="{{players[players.length-1].status === 'fold'|| players[players.length-1].status === 'out'}}">
+      <button class="ready-btn" bindtap="onPlayerReady">准备</button>
     </view>
-    <view class="action-row">
-      <!-- 第二行按钮 -->
-      <button class="action-btn" bindtap="onRaise" wx:if="{{isCurrentPlayer}}">加注</button>
-      <button class="action-btn" bindtap="onCompare" wx:if="{{isCurrentPlayer}}">比牌</button>
-    </view>
+    <!-- 当前玩家未弃牌，显示操作按钮 -->
+    <block wx:else>
+      <view class="action-row">
+        <!-- 第一行按钮 -->
+        <button class="action-btn" bindtap="onCheck">看牌</button>
+        <button class="action-btn" bindtap="onFold">弃牌</button>
+        <button class="action-btn" bindtap="onFollow" wx:if="{{isCurrentPlayer}}">跟注</button>
+      </view>
+      <view class="action-row">
+        <!-- 第二行按钮 -->
+        <button class="action-btn" bindtap="onRaise" wx:if="{{isCurrentPlayer}}">加注</button>
+        <button class="action-btn" bindtap="onCompare" wx:if="{{isCurrentPlayer}}">比牌</button>
+      </view>
+    </block>
   </view>
   
   <!-- 准备按钮 -->
