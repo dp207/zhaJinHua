@@ -161,7 +161,7 @@ async function startGame(roomId, players, baseScore) {
         status: 'playing',
         createTime: db.serverDate(),
         lastActionTime: db.serverDate(),
-        winner: null,
+        winner: {},
         winnerId: null
       }
     });
@@ -567,6 +567,7 @@ async function foldCards(event, openId) {
 // 检查游戏是否结束
 async function checkGameEnd(gameId) {
   try {
+    console.log('检查游戏是否结束', gameId);
     // 获取游戏信息
     const gameRes = await db.collection('games').where({ gameId: gameId }).get();
     if (gameRes.data.length === 0) {
@@ -574,13 +575,30 @@ async function checkGameEnd(gameId) {
     }
     
     const game = gameRes.data[0];
-    
+    console.log('检查游戏是否结束____game', game);
     // 检查剩余玩家数量
     const activePlayers = game.players.filter(p => p.status === 'playing');
     
     // 如果只剩一名玩家，游戏结束
     if (activePlayers.length === 1) {
       const winner = activePlayers[0];
+      console.log('检查游戏是否结束____winner', winner);
+      console.log('检查游戏是否结束____winner.cardType', winner.cardType);
+
+      // 确保 winner 对象有 cardType 字段
+      if (!winner.cardType) {
+        winner.cardType = evaluateHand(winner.handCards);
+      }
+      
+      // 计算每个玩家的积分变化
+      const scoreChanges = {};
+      game.players.forEach(player => {
+        if (player.openId === winner.openId) {
+          scoreChanges[player.openId] = game.totalPot;
+        } else {
+          scoreChanges[player.openId] = -player.totalBet;
+        }
+      });
       
       // 更新游戏状态
       await db.collection('games').where({ gameId: gameId }).update({
@@ -588,24 +606,26 @@ async function checkGameEnd(gameId) {
           status: 'ended',
           winner: winner,
           winnerId: winner.openId,
-          endTime: db.serverDate()
+          endTime: db.serverDate(),
+          scoreChanges: scoreChanges
         }
       });
       
-      // 更新房间状态
-      await db.collection('rooms').where({ roomId: game.roomId }).update({
-        data: {
-          status: 'waiting',
-          currentGameId: null
-        }
-      });
-      
-      // 更新赢家积分
-      const roomRes = await db.collection('rooms').where({ roomId: game.roomId }).get();
-      if (roomRes.data.length > 0) {
-        const room = roomRes.data[0];
-        const winnerIndex = room.players.findIndex(p => p.openId === winner.openId);
-        
+      // 更新房间状态，并重置所有玩家isReady为false，切换庄家为赢家
+      const roomRes2 = await db.collection('rooms').where({ roomId: game.roomId }).get();
+      if (roomRes2.data.length > 0) {
+        const room2 = roomRes2.data[0];
+        const resetPlayers = room2.players.map(p => ({ ...p, isReady: false }));
+        await db.collection('rooms').where({ roomId: game.roomId }).update({
+          data: {
+            status: 'waiting',
+            currentGameId: null,
+            dealerId: winner.openId,
+            players: resetPlayers
+          }
+        });
+        // 更新赢家积分
+        const winnerIndex = resetPlayers.findIndex(p => p.openId === winner.openId);
         if (winnerIndex !== -1) {
           await db.collection('rooms').where({ roomId: game.roomId }).update({
             data: {

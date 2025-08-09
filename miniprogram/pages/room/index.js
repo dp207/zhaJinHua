@@ -679,7 +679,18 @@ Page({
 
     // 如果游戏结束，显示结果
     if (gameData.status === 'ended') {
-      this.showGameResult(gameData)
+      // 重置所有玩家的isReady状态为false
+      const resetPlayers = updatedPlayers.map(p => ({ ...p, isReady: false }));
+      // 切换庄家为赢家
+      let newRoomInfo = { ...this.data.roomInfo };
+      if (gameData.winnerId) {
+        newRoomInfo.dealerId = gameData.winnerId;
+      }
+      this.setData({
+        players: resetPlayers,
+        roomInfo: newRoomInfo
+      });
+      this.showGameResult(gameData);
     }
   },
 
@@ -757,6 +768,18 @@ Page({
       }
     }
     
+    // 显示每个玩家的积分变化
+    if (gameData.scoreChanges) {
+      resultMessage += '\n\n积分变化:\n'
+      gameData.players.forEach(player => {
+        const playerInfo = this.data.players.find(p => p.openId === player.openId)
+        const nickname = playerInfo ? playerInfo.nickname : '未知玩家'
+        const scoreChange = gameData.scoreChanges[player.openId] || 0
+        const scoreChangeText = scoreChange > 0 ? `+${scoreChange}` : scoreChange
+        resultMessage += `${nickname}: ${scoreChangeText}\n`
+      })
+    }
+    
     wx.showModal({
       title: '游戏结果',
       content: resultMessage,
@@ -798,7 +821,7 @@ Page({
 
   // 准备按钮点击 - 重命名以避免与生命周期函数冲突
   onPlayerReady: function () {
-    console.log('onPlayerReady函数被调用 - 时间:', new Date().toLocaleString(), '- 调用堆栈:', new Error().stack);
+    console.log('onPlayerReady函数被调用 - 时间:', new Date().toLocaleString());
     
     // 如果已经准备，则取消准备
     if (this.data.isReady) {
@@ -1226,7 +1249,7 @@ Page({
           }).then(res => {
             wx.hideLoading()
             if (res.result && res.result.success) {
-              // 保留当前玩家的卡牌可见性
+              // 保留当前玩家的卡牌可见性并更新状态为fold
               const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
               if (myPlayerIndex !== -1) {
                 const updatedPlayers = [...this.data.players];
@@ -1240,6 +1263,9 @@ Page({
                   updatedPlayers[myPlayerIndex].handCards = preservedCards;
                 }
                 
+                // 明确设置当前玩家状态为fold（弃牌）
+                updatedPlayers[myPlayerIndex].status = 'fold';
+                
                 this.setData({
                   players: updatedPlayers
                 }, () => {
@@ -1247,7 +1273,7 @@ Page({
                     title: '弃牌成功',
                     icon: 'success'
                   });
-                  console.log('弃牌成功，保留卡牌可见性');
+                  console.log('弃牌成功，已将玩家状态更新为fold，保留卡牌可见性');
                 });
               } else {
                 wx.showToast({
