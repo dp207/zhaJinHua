@@ -22,7 +22,31 @@ Page({
     chatInput: '',
     canSendChat: true,
     lastChatTime: 0,
-    chatCollapsed: true // 聊天默认收起状态
+    chatCollapsed: true, // 聊天默认收起状态
+    showPlayerInfoPopup: false, // 玩家信息弹出层显示状态
+    selectedPlayer: null, // 当前选中的玩家信息
+    showCopyToast: false, // 复制成功提示
+    showGameResultPopup: false, // 游戏结果弹窗显示状态
+    gameResultMessage: '', // 游戏结果消息
+    gameResultScores: [] // 游戏结果积分变化数据
+  },
+
+  // 复制房间号功能
+  copyRoomId: function() {
+    wx.setClipboardData({
+      data: this.data.roomId,
+      success: () => {
+        this.setData({
+          showCopyToast: true
+        });
+        // 2秒后隐藏提示
+        setTimeout(() => {
+          this.setData({
+            showCopyToast: false
+          });
+        }, 2000);
+      }
+    });
   },
 
   onLoad: function (options) {
@@ -307,15 +331,60 @@ Page({
   
   // 离开房间按钮点击事件
   onLeaveRoom: function () {
-    wx.showModal({
-      title: '提示',
-      content: '确定要离开房间吗？',
-      success: (res) => {
-        if (res.confirm) {
-          this.leaveRoom()
+    // 检查当前游戏状态，如果正在游戏中且玩家未弃牌，则提示离开视为放弃
+    const isPlaying = this.data.gameStatus === 'playing';
+    const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
+    const hasNotFolded = myPlayerIndex !== -1 && 
+                        this.data.players[myPlayerIndex].status === 'playing';
+    
+    if (isPlaying && hasNotFolded) {
+      wx.showModal({
+        title: '提示',
+        content: '离开房间视为放弃，确定要离开吗？',
+        success: (res) => {
+          if (res.confirm) {
+            // 先执行弃牌逻辑
+            wx.showLoading({
+              title: '处理中...'
+            });
+            wx.cloud.callFunction({
+              name: 'gameLogic',
+              data: {
+                action: 'foldCards',
+                roomId: this.data.roomId
+              }
+            }).then(res => {
+              wx.hideLoading();
+              if (res.result && res.result.success) {
+                console.log('离开房间前弃牌成功');
+                // 弃牌成功后离开房间
+                this.leaveRoom();
+              } else {
+                console.error('弃牌失败:', res.result.message);
+                // 即使弃牌失败也离开房间
+                this.leaveRoom();
+              }
+            }).catch(err => {
+              wx.hideLoading();
+              console.error('弃牌操作失败:', err);
+              // 出错也离开房间
+              this.leaveRoom();
+            });
+          }
         }
-      }
-    })
+      });
+    } else {
+      // 不在游戏中或已弃牌，直接询问是否离开
+      wx.showModal({
+        title: '提示',
+        content: '确定要离开房间吗？',
+        success: (res) => {
+          if (res.confirm) {
+            this.leaveRoom();
+          }
+        }
+      });
+    }
   },
 
   // 设置房间数据监听
@@ -739,6 +808,27 @@ Page({
     const player = players.find(p => p.openId === openId)
     return player ? player.isReady : false
   },
+  
+  // 显示玩家信息弹出层
+  showPlayerInfo: function(e) {
+    const playerId = e.currentTarget.dataset.playerId;
+    const player = this.data.players.find(p => p.openId === playerId);
+    
+    if (player) {
+      this.setData({
+        selectedPlayer: player,
+        showPlayerInfoPopup: true
+      });
+    }
+  },
+  
+  // 隐藏玩家信息弹出层
+  hidePlayerInfo: function() {
+    this.setData({
+      showPlayerInfoPopup: false,
+      selectedPlayer: null
+    });
+  },
 
   // 显示游戏结果
   showGameResult: function (gameData) {
@@ -766,30 +856,37 @@ Page({
       }
     }
     
-    // 显示每个玩家的积分变化
+    // 准备积分变化数据
+    const scoreChanges = []
     if (gameData.scoreChanges) {
-      resultMessage += '\n\n积分变化:\n'
       gameData.players.forEach(player => {
         const playerInfo = this.data.players.find(p => p.openId === player.openId)
         const nickname = playerInfo ? playerInfo.nickname : '未知玩家'
-        const scoreChange = gameData.scoreChanges[player.openId] || 0
-        const scoreChangeText = scoreChange > 0 ? `+${scoreChange}` : scoreChange
-        resultMessage += `${nickname}: ${scoreChangeText}\n`
+        const change = gameData.scoreChanges[player.openId] || 0
+        const changeText = change > 0 ? `+${change}` : `${change}`
+        scoreChanges.push({
+          nickname,
+          change,
+          changeText
+        })
       })
     }
     
-    wx.showModal({
-      title: '游戏结果',
-      content: resultMessage,
-      showCancel: false,
-      success: () => {
-        // 重置游戏相关数据
-        this.setData({
-          isCurrentPlayer: false,
-          showRaiseInput: false,
-          showCompareSelect: false
-        })
-      }
+    // 使用自定义弹窗显示游戏结果
+    this.setData({
+      showGameResultPopup: true,
+      gameResultMessage: resultMessage,
+      gameResultScores: scoreChanges,
+      isCurrentPlayer: false,
+      showRaiseInput: false,
+      showCompareSelect: false
+    })
+  },
+  
+  // 隐藏游戏结果弹窗
+  hideGameResult: function() {
+    this.setData({
+      showGameResultPopup: false
     })
   },
 

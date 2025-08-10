@@ -1,9 +1,20 @@
 <view class="container">
+  <!-- 复制成功提示 -->
+  <view class="copy-toast {{showCopyToast ? 'show-toast' : ''}}">
+    <text>房间号复制成功</text>
+  </view>
   <!-- 房间信息 -->
   <view class="room-info">
-    <text class="room-id">房间号: {{roomId}}</text>
-    <text class="base-score">底分: {{baseScore}}</text>
-    <button class="leave-btn" bindtap="onLeaveRoom">离开房间</button>
+    <view class="room-id-container">
+      <text class="room-id-label">房间号:</text>
+      <text class="room-id-value" selectable="true">{{roomId}}</text>
+      <view class="copy-icon" bindtap="copyRoomId">复制</view>
+    </view>
+    <view class="base-score-container">
+      <text class="base-score-label">底分:</text>
+      <text class="base-score-value">{{baseScore}}</text>
+    </view>
+    <button class="leave-btn" hover-class="leave-btn-hover" bindtap="onLeaveRoom">离开</button>
   </view>
 
   <!-- 游戏区域 -->
@@ -16,17 +27,13 @@
       </view>
 
       <!-- 玩家区域 -->
-      <view class="players-container">
+      <view class="players-container"> 
         <!-- 其他玩家 - 确保当前玩家不在此区域显示 -->
         <block wx:for="{{players}}" wx:key="openId">
           <view class="player {{item.isDealer ? 'dealer-player' : ''}}" wx:if="{{item.openId !== userInfo._openid}}">
-            <image class="avatar" src="{{item.avatarUrl}}"></image>
-            <text class="nickname">{{item.nickname}}</text>
-            <view class="player-info">
-              <text class="score">积分：{{item.score}}</text>
-              <text class="bet" wx:if="{{item.currentBet > 0}}">下注：{{item.currentBet}}</text>
-            </view>
+            <image class="avatar" src="{{item.avatarUrl}}" bindtap="showPlayerInfo" data-player-id="{{item.openId}}"></image>
             <text class="status">{{item.status}}</text>
+            <text class="bet" wx:if="{{item.currentBet > 0}}">下注：{{item.currentBet}}</text>
             <text class="dealer-badge" wx:if="{{item.isDealer}}">庄家</text>
             <!-- 玩家手牌 -->
             <view class="hand-cards" wx:if="{{item.handCards && item.handCards.length > 0}}">
@@ -129,6 +136,34 @@
     <view class="chat-input" wx:if="{{!chatCollapsed}}">
       <input placeholder="输入消息..." bindinput="onChatInputChange" value="{{chatInput}}" maxlength="50"/>
       <button bindtap="sendChatMessage" disabled="{{!canSendChat}}">发送</button>
+    </view>
+  </view>
+  
+  <!-- 玩家信息弹出层 -->
+  <view class="player-info-popup" wx:if="{{showPlayerInfoPopup}}">
+    <view class="player-info-content">
+      <image class="popup-avatar" src="{{selectedPlayer.avatarUrl}}"></image>
+      <text class="popup-nickname">{{selectedPlayer.nickname}}</text>
+      <text class="popup-score">积分：{{selectedPlayer.score}}</text>
+      <button class="close-popup-btn" bindtap="hidePlayerInfo">关闭</button>
+    </view>
+  </view>
+  
+  <!-- 游戏结束弹窗 -->
+  <view class="game-result-popup" wx:if="{{showGameResultPopup}}">
+    <view class="game-result-content">
+      <view class="game-result-title">游戏结果</view>
+      <view class="game-result-message">
+        <text>{{gameResultMessage}}</text>
+      </view>
+      <view class="game-result-scores" wx:if="{{gameResultScores.length > 0}}">
+        <view class="score-title">积分变化:</view>
+        <view class="score-item" wx:for="{{gameResultScores}}" wx:key="index">
+          <text class="score-name">{{item.nickname}}:</text>
+          <text class="score-change {{item.change > 0 ? 'positive' : (item.change < 0 ? 'negative' : '')}}">{{item.changeText}}</text>
+        </view>
+      </view>
+      <button class="game-result-btn" bindtap="hideGameResult">确定</button>
     </view>
   </view>
 </view>

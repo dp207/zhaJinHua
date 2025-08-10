@@ -1,5 +1,6 @@
 const app = getApp();
-const defaultAvatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
+// 使用空白头像作为默认值，让我们的自定义背景图案显示出来
+const defaultAvatarUrl = ''
 
 Page({
   data: {

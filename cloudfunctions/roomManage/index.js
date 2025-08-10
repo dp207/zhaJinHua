@@ -285,32 +285,52 @@ async function leaveRoom(event, context) {
       return { success: false, message: '您不在该房间中' };
     }
 
-    // 如果是房主离开，解散房间
-    if (room.players[playerIndex].isOwner) {
+    // 如果是房主离开且房间中还有其他玩家，将房主身份转移给下一位玩家
+    if (room.players[playerIndex].isOwner && room.players.length > 1) {
+      // 移除当前玩家
+      const updatedPlayers = room.players.filter(player => player.openId !== openId);
+      
+      // 将第一位玩家设为新房主
+      updatedPlayers[0].isOwner = true;
+      
+      // 更新房间信息
+      await db.collection('rooms').where({ roomId: roomId }).update({
+        data: {
+          players: updatedPlayers,
+          owner: updatedPlayers[0].openId // 更新房间所有者
+        }
+      });
+      
+      return { success: true, message: '已离开房间，房主身份已转移' };
+    } 
+    // 如果是房主离开且没有其他玩家，解散房间
+    else if (room.players[playerIndex].isOwner) {
       await db.collection('rooms').where({ roomId: roomId }).remove();
       return { success: true, message: '房主离开，房间已解散' };
     }
-
-    // 移除玩家
-    const updatedPlayers = room.players.filter(player => player.openId !== openId);
-    
-    // 移除玩家
-    await db.collection('rooms').where({ roomId: roomId }).update({
-      data: {
-        players: updatedPlayers
-      }
-    });
-
-    // 如果房间内没有玩家了，将房间状态重置为等待中
-    if (updatedPlayers.length === 0) {
+    // 非房主离开
+    else {
+      // 移除玩家
+      const updatedPlayers = room.players.filter(player => player.openId !== openId);
+      
+      // 更新房间信息
       await db.collection('rooms').where({ roomId: roomId }).update({
         data: {
-          status: 'waiting' // 重置房间状态
+          players: updatedPlayers
         }
       });
-      return { success: true, message: '已离开房间，房间状态已重置' };
-    } else {
-      return { success: true, message: '已离开房间' };
+
+      // 如果房间内没有玩家了，将房间状态重置为等待中
+      if (updatedPlayers.length === 0) {
+        await db.collection('rooms').where({ roomId: roomId }).update({
+          data: {
+            status: 'waiting' // 重置房间状态
+          }
+        });
+        return { success: true, message: '已离开房间，房间状态已重置' };
+      } else {
+        return { success: true, message: '已离开房间' };
+      }
     }
   } catch (e) {
     return { success: false, message: e.message };

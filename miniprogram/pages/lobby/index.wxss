@@ -78,6 +78,12 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-dialog {
@@ -85,12 +91,20 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: white;
-  border-radius: 10rpx;
+  background-color: #0e5733; /* 绿色背景，与游戏主题相符 */
+  border-radius: 16rpx;
   width: 80%;
   max-width: 600rpx;
   overflow: hidden;
   z-index: 1001;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.5);
+  border: 4rpx solid #ffcc00; /* 金色边框 */
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
 .modal-title {
@@ -98,31 +112,37 @@
   font-weight: bold;
   text-align: center;
   padding: 30rpx;
-  border-bottom: 1rpx solid #eee;
+  border-bottom: 2rpx solid #ffcc00; /* 金色分隔线 */
+  color: #ffffff; /* 白色文字 */
+  background-color: #0a4527; /* 深绿色标题背景 */
 }
 
 .modal-content {
-  padding: 30rpx;
+  padding: 40rpx 30rpx;
+  color: #ffffff; /* 白色文字 */
 }
 
 .form-item {
   display: flex;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 30rpx;
 }
 
 .form-item .label {
   width: 150rpx;
   font-size: 30rpx;
-  color: #333;
+  color: #ffcc00; /* 金色标签 */
+  font-weight: bold;
 }
 
 .form-item input {
   flex: 1;
-  border: 1rpx solid #ddd;
+  border: 2rpx solid #ffcc00; /* 金色边框 */
   padding: 15rpx;
-  border-radius: 5rpx;
+  border-radius: 8rpx;
   font-size: 30rpx;
+  background-color: rgba(255, 255, 255, 0.1); /* 半透明白色背景 */
+  color: #ffffff; /* 白色文字 */
 }
 
 .form-item radio-group {
@@ -131,18 +151,20 @@
 }
 
 .radio.disabled {
-  color: #999;
+  color: #aaa;
   opacity: 0.7;
 }
 
 .form-item .radio {
   margin-right: 30rpx;
   font-size: 30rpx;
+  color: #ffffff; /* 白色文字 */
 }
 
 .modal-footer {
   display: flex;
-  border-top: 1rpx solid #eee;
+  border-top: 2rpx solid #ffcc00; /* 金色分隔线 */
+  background-color: #0a4527; /* 深绿色底部背景 */
 }
 
 .modal-footer button {
@@ -151,14 +173,24 @@
   margin: 0;
   padding: 25rpx 0;
   font-size: 32rpx;
+  font-weight: bold;
+  transition: all 0.3s ease;
 }
 
 .modal-footer .btn-cancel {
-  background-color: #f0f0f0;
-  color: #333;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.modal-footer .btn-cancel:active {
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .modal-footer .btn-confirm {
-  background-color: #007bff;
-  color: white;
+  background-color: #ffcc00; /* 金色按钮 */
+  color: #0a4527; /* 深绿色文字 */
+}
+
+.modal-footer .btn-confirm:active {
+  background-color: #d4af37; /* 深金色 */
 }

@@ -2,9 +2,10 @@
   <image class="logo" src="/images/logo.png"></image>
   <text class="title">炸金花</text>
     <block wx:if="{{canIUseNicknameComp && !hasUserInfo}}">
-      <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+      <button class="{{!userInfo.avatarUrl ? 'avatar-wrapper avatar-pulse' : 'avatar-wrapper'}}" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
         <image class="avatar" src="{{userInfo.avatarUrl}}"></image>
       </button>
+      <text class="avatar-tip" wx:if="{{!userInfo.avatarUrl}}">点击上方选择头像</text>
       <view class="nickname-wrapper">
         <text class="nickname-label">昵称</text>
         <input type="nickname" class="nickname-input" placeholder="请输入昵称" bind:change="onInputChange" />
