@@ -4,7 +4,8 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: linear-gradient(to bottom, #f0f8f0, #e0f0e0); /* 渐变背景 */
+  background-color: #f0f8f0; /* 浅绿色背景 */
+  padding: 0 30rpx;
 }
 
 .logo {
@@ -12,21 +13,21 @@
   height: 180rpx;
   margin-bottom: 40rpx;
   border-radius: 20rpx;
-  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 
 .title {
-  font-size: 60rpx;
+  font-size: 52rpx;
   font-weight: bold;
-  color: #2c3e50;
+  color: #1a6840;
   margin-bottom: 80rpx;
-  text-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.1);
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
 }
 
 .avatar-wrapper {
   padding: 0;
-  width: 200rpx;
-  height: 200rpx;
+  width: 180rpx;
+  height: 180rpx;
   margin-top: 50rpx;
   border-radius: 50%;
   overflow: hidden;
@@ -49,15 +50,16 @@
   margin-top: 40rpx;
   width: 80%;
   border: 1px solid #ddd;
-  border-radius: 16rpx;
-  padding: 16rpx 24rpx;
-  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 40rpx;
+  padding: 16rpx 30rpx;
+  background-color: #ffffff;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .nickname-label {
   font-size: 32rpx;
-  color: #333;
+  color: #1a6840;
+  font-weight: 500;
   margin-right: 20rpx;
 }
 
@@ -65,38 +67,35 @@
   flex: 1;
   font-size: 32rpx;
   color: #333;
+  height: 60rpx;
 }
 
 .login-btn {
   width: 80%;
   margin-top: 60rpx;
-  background-color: #07c160;
+  background-color: #1a6840;
   color: #fff;
-  border-radius: 16rpx;
-  font-size: 36rpx;
+  border-radius: 40rpx;
+  font-size: 34rpx;
+  font-weight: 500;
   padding: 16rpx 0;
-  box-shadow: 0 6rpx 12rpx rgba(7, 193, 96, 0.3);
-  transition: all 0.3s ease;
+  box-shadow: 0 4rpx 12rpx rgba(26, 104, 64, 0.2);
 }
 
-.login-btn:active {
-  transform: scale(0.98);
-  box-shadow: 0 2rpx 6rpx rgba(7, 193, 96, 0.3);
-}
-
+/* 已登录状态下的头像和昵称样式 */
 .userinfo-avatar {
-  width: 200rpx;
-  height: 200rpx;
+  width: 180rpx;
+  height: 180rpx;
+  margin-top: 50rpx;
   border-radius: 50%;
   overflow: hidden;
-  margin-bottom: 30rpx;
-  border: 4rpx solid #ffffff;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  border: 4rpx solid #ffffff;
 }
 
 .userinfo-nickname {
+  margin-top: 30rpx;
   font-size: 36rpx;
-  color: #2c3e50;
-  margin-bottom: 40rpx;
+  color: #1a6840;
   font-weight: 500;
 }

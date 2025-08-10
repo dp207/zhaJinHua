@@ -45,7 +45,7 @@
         <block wx:for="{{players}}" wx:key="openId">
           <block wx:if="{{item.openId === userInfo._openid}}">
             <!-- 当前玩家信息显示在牌上方，不显示昵称 -->
-            <view class="current-player-info">
+            <view >
               <text class="current-player-score">积分：{{item.score}}</text>
               <text class="current-player-bet" wx:if="{{item.currentBet > 0}}">下注：{{item.currentBet}}</text>
               <text class="current-player-status">{{item.status}}</text>

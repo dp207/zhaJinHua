@@ -40,6 +40,8 @@
   display: flex;
   flex-direction: column;
   position: relative;
+  padding: 0 10rpx;
+  margin-bottom: 10rpx;
 }
 
 /* 牌桌 */
@@ -80,82 +82,113 @@
 
 .player {
   position: absolute;
-  width: 180rpx;
-  background-color: rgba(0, 0, 0, 0.4);
-  border-radius: 10rpx;
-  padding: 10rpx;
+  width: 160rpx;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 12rpx;
+  padding: 8rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
 }
 
-/* U型布局 - 其他玩家在两侧和顶部排列 */
-/* 左侧玩家 */
+/* 左右两侧各4个玩家布局 */
+/* 左侧4个玩家 */
+/* 第1个玩家 - 左侧顶部 */
 .players-container .player:nth-of-type(1) {
-  top: 50%;
-  left: 20rpx;
+  top: 15%;
+  left: 130rpx;
   transform: translateY(-50%);
 }
 
-/* 顶部左侧玩家 */
-.players-container .player:nth-of-type(2) {
-  top: 20rpx;
-  left: 30%;
-  transform: translateX(-50%);
-}
-
-/* 顶部右侧玩家 */
+/* 第3个玩家 - 左侧中上部 */
 .players-container .player:nth-of-type(3) {
-  top: 20rpx;
-  left: 70%;
-  transform: translateX(-50%);
-}
-
-/* 右侧玩家 */
-.players-container .player:nth-of-type(4) {
-  top: 50%;
-  right: 20rpx;
+  top: 38%;
+  left: 130rpx;
   transform: translateY(-50%);
 }
 
-/* 第5个玩家 */
+/* 第5个玩家 - 左侧中下部 */
 .players-container .player:nth-of-type(5) {
-  top: 20rpx;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 62%;
+  left: 130rpx;
+  transform: translateY(-50%);
+}
+
+/* 第7个玩家 - 左侧底部 */
+.players-container .player:nth-of-type(7) {
+  top: 85%;
+  left: 130rpx;
+  transform: translateY(-50%);
+}
+
+/* 右侧4个玩家 */
+/* 第2个玩家 - 右侧顶部 */
+.players-container .player:nth-of-type(2) {
+  top: 15%;
+  right: 130rpx;
+  transform: translateY(-50%);
+}
+
+/* 第4个玩家 - 右侧中上部 */
+.players-container .player:nth-of-type(4) {
+  top: 38%;
+  right: 130rpx;
+  transform: translateY(-50%);
+}
+
+/* 第6个玩家 - 右侧中下部 */
+.players-container .player:nth-of-type(6) {
+  top: 62%;
+  right: 130rpx;
+  transform: translateY(-50%);
+}
+
+/* 第8个玩家 - 右侧底部 */
+.players-container .player:nth-of-type(8) {
+  top: 85%;
+  right: 130rpx;
+  transform: translateY(-50%);
 }
 
 /* 当前玩家区域 - 只显示牌和信息，不显示头像和昵称 */
 .current-player-area {
   position: absolute;
-  bottom: 20%; /* 使用百分比单位，自适应不同屏幕尺寸 */
+  bottom: 14%; /* 调整位置，使其更贴近操作按钮区域 */
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(0.75); /* 缩小为原来的75% */
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 1000%; /* 增加宽度以便更好地显示内容 */
+  width: 95%; /* 进一步增加宽度以容纳更多信息 */
+  min-width: 500rpx; /* 设置最小宽度确保内容不会被挤压 */
   z-index: 6; /* 提高z-index确保在操作区域上层 */
-  background-color: rgba(0, 0, 0, 0.5); /* 增加背景色透明度以更好地区分 */
-  border-radius: 15rpx; /* 增加圆角 */
-  padding: 15rpx; /* 增加内边距 */
-  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3); /* 添加阴影效果 */
+  background-color: rgba(0, 0, 0, 0); /* 降低背景色透明度 */
+  border-radius: 12rpx; /* 调整圆角 */
+  padding: 12rpx; /* 增加内边距 */
+ /* box-shadow: 0 6rpx 12rpx rgba(0, 0, 0, 0.4); *//* 增强阴影效果 */
+ /* border: 1rpx solid rgba(255, 255, 255, 0.2);*/ /* 添加边框增强视觉效果 */
+  transform-origin: center bottom; /* 设置变换原点为底部中心 */
 }
 
 .avatar {
-  width: 80rpx;
-  height: 80rpx;
+  width: 70rpx;
+  height: 70rpx;
   border-radius: 50%;
-  margin-bottom: 10rpx;
+  margin-bottom: 6rpx;
+  border: 2rpx solid #ffcc00;
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
 }
 
 .nickname {
-  font-size: 24rpx;
-  margin-bottom: 5rpx;
+  font-size: 22rpx;
+  margin-bottom: 4rpx;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 160rpx;
+  max-width: 140rpx;
+  color: #ffffff;
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.5);
 }
 
 .player {
@@ -169,23 +202,25 @@
   align-items: center;
 }
 
-/* 玩家信息区域 - 横向显示积分和下注 */
+/* 玩家信息区域 - 紧凑显示积分和下注 */
 .player-info {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   width: 100%;
+  margin-top: 2rpx;
 }
 
 .score, .status, .bet {
-  font-size: 22rpx;
-  margin: 0 5rpx 5rpx 5rpx;
+  font-size: 20rpx;
+  margin: 2rpx 0;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .status {
   color: #ffcc00; /* 金色状态文字 */
+  font-weight: 500;
 }
 
 .bet {
@@ -195,49 +230,71 @@
 /* 手牌样式 */
 .hand-cards {
   display: flex;
-  margin-top: 10rpx;
+  margin-top: 6rpx;
+  justify-content: center;
 }
 
 .card {
-  width: 50rpx;
-  height: 70rpx;
+  width: 40rpx;
+  height: 56rpx;
   background-color: #ffffff;
-  border-radius: 5rpx;
-  margin: 0 2rpx;
+  border-radius: 4rpx;
+  margin: 0 -2rpx; /* 负边距使牌叠加显示 */
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 20rpx;
+  font-size: 18rpx;
   color: #000000;
   box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
+  position: relative;
+  border: 1rpx solid #ffffff;
+}
+
+.card:nth-child(2) {
+  z-index: 2;
+}
+
+.card:nth-child(3) {
+  z-index: 3;
 }
 
 .card.hidden {
   background-color: #b71c1c; /* 红色牌背 */
   background-image: linear-gradient(45deg, #b71c1c 25%, #d32f2f 25%, #d32f2f 50%, #b71c1c 50%, #b71c1c 75%, #d32f2f 75%, #d32f2f 100%);
-  background-size: 10rpx 10rpx;
+  background-size: 8rpx 8rpx;
+  border: 1rpx solid rgba(255, 204, 0, 0.5); /* 添加金色边框 */
 }
 
 /* 当前玩家信息和牌 */
 .current-player-info {
   display: flex;
-  flex-direction: row;
-  justify-content: center;
+  flex-direction: row; /* 改为横向排列 */
+  justify-content: space-around; /* 均匀分布 */
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 12rpx;
-  padding: 12rpx 24rpx;
-  margin-bottom: 15rpx; /* 改为下边距，因为现在信息在上方 */
+  background-color: rgba(0, 0, 0, 0.7); /* 增加背景色不透明度 */
+  border-radius: 10rpx;
+  padding: 10rpx 15rpx;
+  margin-bottom: 12rpx;
   width: 95%;
-  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3); /* 添加阴影效果 */
+  box-shadow: 0 3rpx 6rpx rgba(0, 0, 0, 0.3);
+  border: 1rpx solid rgba(255, 255, 255, 0.15); /* 添加边框 */
+  transform: scale(0.85); /* 按比例缩小 */
+  transform-origin: center bottom; /* 从底部中心缩放 */
 }
 
 .current-player-score, 
 .current-player-bet, 
 .current-player-status {
-  font-size: 23rpx;
-  margin: 0 15rpx;
-  font-weight: 500; /* 稍微加粗字体 */
+  font-size: 30rpx; /* 缩小字体 */
+  margin: 0 8rpx; /* 减小外边距 */
+  color: #fff;
+  padding: 5rpx 10rpx; /* 减小内边距 */
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 6rpx; /* 减小圆角 */
+  text-align: center;
+  min-width: 90rpx; /* 减小最小宽度 */
+  line-height: 1.3; /* 减小行高 */
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.8);
 }
 
 .current-player-status {
@@ -250,30 +307,47 @@
 
 .current-player-cards {
   display: flex;
-  margin-top: 10rpx;
-  margin-bottom: 10rpx;
   justify-content: center;
+  width: 100%;
+  margin-top: 20rpx; /* 减小上边距 */
+  margin-bottom: -10rpx;
 }
 
 .current-player-card {
-  width: 65rpx; /* 原来的两倍 */
-  height: 80rpx; /* 原来的两倍 */
-  background-color: #ffffff;
-  border-radius: 10rpx; /* 与卡牌大小成比例 */
-  margin: 0 4rpx; /* 增加间距 */
+  width: 90rpx; /* 缩小卡牌宽度为原来的约75% */
+  height: 120rpx; /* 缩小卡牌高度为原来的约75% */
+  background-color: #fff;
+  border-radius: 8rpx; /* 减小圆角 */
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 40rpx; /* 原来的两倍 */
+  font-size: 40rpx; /* 缩小字体 */
   color: #000000;
-  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3); /* 增加阴影效果 */
+  box-shadow: 0 3rpx 6rpx rgba(0, 0, 0, 0.4); /* 减小阴影 */
   position: relative;
+  border: 1rpx solid rgba(0, 0, 0, 0.2);
+  z-index: 1; /* 基础z-index */
+}
+
+/* 为不同卡牌设置不同的z-index，确保叠加顺序正确 */
+.current-player-card:nth-child(1) {
+  z-index: 3;
+}
+
+.current-player-card:nth-child(2) {
+  z-index: 2;
+}
+
+.current-player-card:nth-child(3) {
+  z-index: 1;
 }
 
 .current-player-card.hidden {
   background-color: #b71c1c; /* 红色牌背 */
   background-image: linear-gradient(45deg, #b71c1c 25%, #d32f2f 25%, #d32f2f 50%, #b71c1c 50%, #b71c1c 75%, #d32f2f 75%, #d32f2f 100%);
-  background-size: 20rpx 20rpx; /* 原来的两倍 */
+  background-size: 15rpx 15rpx; /* 缩小背景图案 */
+  border: 1rpx solid rgba(255, 204, 0, 0.5); /* 添加金色边框 */
+  color: transparent;
 }
 
 .current-player-card.hidden text {
@@ -285,40 +359,47 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 15rpx;
-  background-color: rgba(0, 0, 0, 0.6); /* 增加背景色透明度 */
-  border-radius: 15rpx; /* 增加圆角 */
+  padding: 15rpx 10rpx;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 20rpx 20rpx 0 0;
   margin-top: 10rpx;
-  width: 90%;
+  width: 100%;
   position: absolute;
-  bottom: 5%; /* 使用百分比单位，自适应不同屏幕尺寸 */
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 5;
-  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3); /* 添加阴影效果 */
+  box-shadow: 0 -4rpx 10rpx rgba(0, 0, 0, 0.3);
+  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
 }
 
 /* 操作按钮行 */
 .action-row {
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
   width: 100%;
-  margin: 5rpx 0;
+  margin: 4rpx 0;
 }
 
 .action-btn {
-  font-size: 28rpx; /* 增加字体大小 */
-  padding: 12rpx 24rpx; /* 增加内边距 */
-  background-color: #d4af37; /* 金色按钮 */
+  font-size: 28rpx;
+  padding: 8rpx 16rpx;
+  background-color: #d4af37; /* 恢复金色按钮 */
   color: #000000;
-  border-radius: 15rpx; /* 增加圆角 */
-  margin: 8rpx 15rpx; /* 增加按钮间距 */
-  min-width: 120rpx; /* 增加最小宽度 */
-  line-height: 1.5;
+  border-radius: 8rpx;
+  margin: 0 8rpx;
+  min-width: 140rpx;
+  line-height: 1.8;
   height: auto;
-  font-weight: bold; /* 加粗字体 */
-  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.4); /* 增强阴影效果 */
-  transition: all 0.2s; /* 添加过渡效果 */
+  font-weight: bold;
+  box-shadow: 0 3rpx 6rpx rgba(0, 0, 0, 0.3);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+  background-color: #c09c30; /* 按下时的深金色 */
 }
 
 .action-btn[disabled] {
@@ -331,9 +412,9 @@
 .ready-area {
   display: flex;
   justify-content: center;
-  padding: 20rpx;
+  padding: 10rpx;
   position: absolute;
-  bottom: 30rpx;
+  bottom: 20rpx;
   left: 50%;
   transform: translateX(-50%);
   width: 90%;
@@ -342,41 +423,68 @@
 
 .ready-btn {
   font-size: 32rpx;
-  padding: 15rpx 60rpx;
+  padding: 15rpx 40rpx;
   background-color: #d4af37; /* 金色按钮 */
   color: #000000;
-  border-radius: 10rpx;
+  border-radius: 30rpx;
+  font-weight: bold;
+  box-shadow: 0 3rpx 8rpx rgba(0, 0, 0, 0.3);
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.ready-btn:active {
+  transform: scale(0.95);
+  background-color: #c09c30;
 }
 
 /* 加注输入框 */
 .raise-input {
-  position: absolute;
-  bottom: 250rpx;
+  position: fixed;
+  bottom: 25%;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #d8b13c;
-  padding: 20rpx;
-  border-radius: 10rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 80%;
-  z-index: 20;
+  background-color: rgba(0, 0, 0, 0.85);
+  padding: 20rpx;
+  border-radius: 15rpx;
+  width: 85%;
+  z-index: 10;
+  box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.5);
+  border: 2rpx solid #d4af37; /* 金色边框，与按钮风格统一 */
 }
 
 .raise-input input {
-  background-color: #ffffff;
-  color: #000000;
-  width: 100%;
-  padding: 10rpx;
-  border-radius: 5rpx;
+  width: 90%;
+  height: 80rpx;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 10rpx;
   margin-bottom: 20rpx;
+  padding: 0 20rpx;
+  font-size: 30rpx;
+  box-shadow: inset 0 3rpx 8rpx rgba(0, 0, 0, 0.2);
+  border: 1rpx solid rgba(212, 175, 55, 0.3); /* 淡金色边框 */
+  color: #333;
 }
 
 .raise-input button {
-  margin: 10rpx;
+  width: 40%;
+  margin: 8rpx;
   font-size: 28rpx;
-  padding: 10rpx 30rpx;
+  padding: 8rpx 0;
+  border-radius: 8rpx;
+  background-color: #d4af37; /* 恢复金色按钮 */
+  color: #000000;
+  box-shadow: 0 3rpx 6rpx rgba(0, 0, 0, 0.3);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.raise-input button:active {
+  transform: scale(0.95);
+  background-color: #c09c30; /* 按下时的深金色 */
 }
 
 /* 比牌选择 */
@@ -385,19 +493,24 @@
   bottom: 250rpx;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #ffcc00;
+  background-color: rgba(0, 0, 0, 0.85);
   padding: 20rpx;
-  border-radius: 10rpx;
+  border-radius: 15rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 80%;
+  width: 85%;
   z-index: 20;
+  box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.5);
+  border: 2rpx solid #d4af37; /* 金色边框，与加注弹框风格统一 */
 }
 
 .compare-select text {
   margin-bottom: 20rpx;
-  font-size: 28rpx;
+  font-size: 30rpx;
+  color: #ffffff;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.5);
+  font-weight: 500;
 }
 
 .compare-players {
@@ -405,12 +518,42 @@
   flex-wrap: wrap;
   justify-content: center;
   margin-bottom: 20rpx;
+  width: 100%;
 }
 
 .compare-players button {
   margin: 10rpx;
-  font-size: 24rpx;
-  padding: 10rpx 20rpx;
+  font-size: 28rpx;
+  padding: 12rpx 25rpx;
+  background-color: #d4af37; /* 金色按钮 */
+  color: #000000;
+  border-radius: 10rpx;
+  box-shadow: 0 3rpx 6rpx rgba(0, 0, 0, 0.3);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.compare-players button:active {
+  transform: scale(0.95);
+  background-color: #c09c30; /* 按下时的深金色 */
+}
+
+.compare-select > button {
+  width: 40%;
+  margin: 8rpx;
+  font-size: 28rpx;
+  padding: 12rpx 0;
+  border-radius: 10rpx;
+  background-color: #d4af37; /* 金色按钮 */
+  color: #000000;
+  box-shadow: 0 3rpx 6rpx rgba(0, 0, 0, 0.3);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.compare-select > button:active {
+  transform: scale(0.95);
+  background-color: #c09c30; /* 按下时的深金色 */
 }
 
 /* 聊天区域 - 右下角侧边栏 */
