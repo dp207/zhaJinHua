@@ -351,7 +351,8 @@ Page({
               name: 'gameLogic',
               data: {
                 action: 'foldCards',
-                roomId: this.data.roomId
+                roomId: this.data.roomId,
+                isLeaving: true // 标记为离开房间导致的弃牌，绕过轮次校验
               }
             }).then(res => {
               wx.hideLoading();
@@ -680,7 +681,9 @@ Page({
           currentBet: playerGameData.currentBet !== undefined ? playerGameData.currentBet : player.currentBet,
           totalBet: playerGameData.totalBet !== undefined ? playerGameData.totalBet : player.totalBet,
           // 确保从游戏数据中获取最新的玩家状态
-          status: playerGameData.status || player.status
+          status: playerGameData.status || player.status,
+          // 添加玩家是否看牌的状态
+          hasChecked: playerGameData.hasChecked || false
         };
         
         console.log(`更新后的玩家 ${player.nickname} 数据:`, 
@@ -730,7 +733,8 @@ Page({
       players: updatedPlayers,
       isCurrentPlayer: isCurrentPlayer,
       activePlayers: activePlayers,
-      gameStatus: gameData.status || this.data.gameStatus // 更新游戏状态
+      gameStatus: gameData.status || this.data.gameStatus, // 更新游戏状态
+      gameData: gameData // 将游戏数据暴露给视图层，用于显示当前玩家指示器
     }, () => {
       console.log('游戏数据更新完成，当前玩家列表:', JSON.stringify(this.data.players));
       console.log('检查玩家状态和下注信息是否正确保留:');
@@ -998,6 +1002,8 @@ Page({
             ...card,
             isVisible: true // 设置卡牌为可见
           }));
+          // 设置玩家已看牌状态
+          updatedPlayers[myPlayerIndex].hasChecked = true;
           
           this.setData({
             players: updatedPlayers
@@ -1006,7 +1012,7 @@ Page({
               title: '看牌成功',
               icon: 'success'
             });
-            console.log('卡牌已设置为可见');
+            console.log('卡牌已设置为可见，玩家已看牌状态已更新');
           });
         } else {
           wx.showToast({

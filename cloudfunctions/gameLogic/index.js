@@ -535,7 +535,7 @@ async function compareCards(event, openId) {
 
 // 弃牌
 async function foldCards(event, openId) {
-  const { roomId } = event;
+  const { roomId, isLeaving = false } = event;
   
   try {
     // 获取房间信息
@@ -559,13 +559,23 @@ async function foldCards(event, openId) {
     
     const game = gameRes.data[0];
     
-    // 检查是否轮到该玩家
-    if (game.players[game.currentPlayerIndex].openId !== openId) {
-      return { success: false, message: '现在不是您的回合' };
+    // 查找玩家索引
+    let playerIndex;
+    
+    if (isLeaving) {
+      // 如果是离开房间导致的弃牌，直接查找玩家索引
+      playerIndex = game.players.findIndex(p => p.openId === openId);
+      if (playerIndex === -1) {
+        return { success: false, message: '您不在该游戏中' };
+      }
+    } else {
+      // 正常弃牌流程，检查是否轮到该玩家
+      if (game.players[game.currentPlayerIndex].openId !== openId) {
+        return { success: false, message: '现在不是您的回合' };
+      }
+      playerIndex = game.currentPlayerIndex;
     }
     
-    // 查找玩家
-    const playerIndex = game.currentPlayerIndex;
     const player = game.players[playerIndex];
     
     // 检查玩家状态
@@ -579,14 +589,25 @@ async function foldCards(event, openId) {
     updatedPlayers[playerIndex].status = 'fold';
     
     // 计算下一个有效玩家的索引（排除状态为fold的玩家）
-    const nextPlayerIndex = getNextValidPlayerIndex(updatedPlayers, playerIndex);
+    // 如果当前是轮到该玩家，才更新下一个玩家
+    let nextPlayerIndex = game.currentPlayerIndex;
+    if (!isLeaving || playerIndex === game.currentPlayerIndex) {
+      nextPlayerIndex = getNextValidPlayerIndex(updatedPlayers, playerIndex);
+    }
+    
+    // 构建更新数据
+    const updateData = {
+      [`players.${playerIndex}.status`]: 'fold',
+      lastActionTime: db.serverDate()
+    };
+    
+    // 只有当前玩家是当前回合玩家或者需要更新下一个玩家时才更新currentPlayerIndex
+    if (!isLeaving || playerIndex === game.currentPlayerIndex) {
+      updateData.currentPlayerIndex = nextPlayerIndex;
+    }
     
     await db.collection('games').where({ gameId: room.currentGameId }).update({
-      data: {
-        [`players.${playerIndex}.status`]: 'fold',
-        currentPlayerIndex: nextPlayerIndex,
-        lastActionTime: db.serverDate()
-      }
+      data: updateData
     });
     
     // 检查是否需要结束游戏

@@ -120,12 +120,21 @@
   padding: 20rpx;*/
 }
 
-/* 下注池 */
-.pot {
+/* 游戏状态栏 */
+.game-status-bar {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+  z-index: 5;
+}
+
+/* 下注池 */
+.pot {
   background-color: rgba(0, 0, 0, 0.6);
   padding: 20rpx 40rpx;
   border-radius: 40rpx;
@@ -136,6 +145,25 @@
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.5);
   border: 2rpx solid rgba(255, 204, 0, 0.3);
   backdrop-filter: blur(2px);
+}
+
+/* 当前玩家提示 */
+.current-player-tip {
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 10rpx 30rpx;
+  border-radius: 30rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.8);
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.4);
+  border: 2rpx solid rgba(255, 255, 255, 0.2);
+  animation: fadeInOut 2s infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
 }
 
 /* 玩家区域 */
@@ -155,6 +183,39 @@
   flex-direction: column;
   align-items: center;
   box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+/* 当前玩家高亮样式 */
+.current-active-player {
+  background-color: rgba(255, 204, 0, 0.3);
+  box-shadow: 0 0 15rpx rgba(255, 204, 0, 0.7);
+  border: 2rpx solid #ffcc00;
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+/* 当前活跃玩家的头像动画 */
+.current-active-player .avatar {
+  animation: avatarPulse 1.5s infinite;
+  border: 3rpx solid #ffcc00;
+  box-shadow: 0 0 15rpx rgba(255, 204, 0, 0.7);
+}
+
+/* 移除了当前玩家指示器，改为头像动画效果 */
+@keyframes avatarPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 10rpx rgba(255, 204, 0, 0.8);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 20rpx rgba(255, 204, 0, 0.9);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 10rpx rgba(255, 204, 0, 0.8);
+  }
 }
 
 /* 左右两侧各4个玩家布局 */
@@ -228,13 +289,14 @@
   width: 95%; /* 进一步增加宽度以容纳更多信息 */
   min-width: 500rpx; /* 设置最小宽度确保内容不会被挤压 */
   z-index: 6; /* 提高z-index确保在操作区域上层 */
-  background-color: rgba(0, 0, 0, 0); /* 降低背景色透明度 */
+  background-color: rgba(0, 0, 0, 0); /* 添加轻微背景色 */
   border-radius: 12rpx; /* 调整圆角 */
   padding: 12rpx; /* 增加内边距 */
- /* box-shadow: 0 6rpx 12rpx rgba(0, 0, 0, 0.4); *//* 增强阴影效果 */
- /* border: 1rpx solid rgba(255, 255, 255, 0.2);*/ /* 添加边框增强视觉效果 */
   transform-origin: center bottom; /* 设置变换原点为底部中心 */
+  transition: all 0.3s ease;
 }
+
+
 
 .avatar {
   width: 70rpx;
@@ -470,11 +532,12 @@
   display: flex;
   margin-top: 6rpx;
   justify-content: center;
+  position: relative;
 }
 
 .card {
-  width: 40rpx;
-  height: 56rpx;
+  width: 44rpx; /* 略微增加宽度 */
+  height: 60rpx; /* 略微增加高度 */
   background-color: #ffffff;
   border-radius: 4rpx;
   margin: 0 -2rpx; /* 负边距使牌叠加显示 */
@@ -486,6 +549,17 @@
   box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
   position: relative;
   border: 1rpx solid #ffffff;
+}
+
+/* 卡牌花色颜色设置 */
+.card text {
+  color: #000000; /* 默认黑色（梅花和黑桃） */
+}
+
+/* 红色花色（红桃和方块） */
+.card text[data-suit="♥"],
+.card text[data-suit="♦"] {
+  color: #ff0000;
 }
 
 .card:nth-child(2) {
@@ -501,6 +575,84 @@
   background-image: linear-gradient(45deg, #b71c1c 25%, #d32f2f 25%, #d32f2f 50%, #b71c1c 50%, #b71c1c 75%, #d32f2f 75%, #d32f2f 100%);
   background-size: 8rpx 8rpx;
   border: 1rpx solid rgba(255, 204, 0, 0.5); /* 添加金色边框 */
+}
+
+/* 已看牌玩家的卡牌样式 */
+.has-checked .card.hidden {
+  background-color: #1c56b7; /* 蓝色牌背 */
+  background-image: linear-gradient(45deg, #1c56b7 25%, #2f7ad3 25%, #2f7ad3 50%, #1c56b7 50%, #1c56b7 75%, #2f7ad3 75%, #2f7ad3 100%);
+  background-size: 8rpx 8rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.8); /* 白色边框 */
+  box-shadow: 0 0 8rpx rgba(100, 180, 255, 0.7); /* 增强发光效果 */
+  transform: rotate(5deg); /* 轻微旋转 */
+  transition: all 0.3s ease;
+  position: relative; /* 为伪元素定位做准备 */
+}
+
+/* 在卡牌背面添加"已看牌"文字 */
+/* 为每张卡牌单独设置文字 */
+.has-checked .card.hidden:nth-child(1)::after {
+  content: "已";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-5deg); /* 抵消卡牌旋转 */
+  font-size: 16rpx; /* 略微增大字体 */
+  font-weight: bold;
+  color: #ffffff; /* 纯白色更醒目 */
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.7); /* 增强文字阴影 */
+  pointer-events: none; /* 确保不影响点击事件 */
+  animation: cardTextPulse 2s infinite;
+  background-color: rgba(0, 0, 0, 0.3); /* 半透明背景增加可读性 */
+  padding: 2rpx 4rpx; /* 添加内边距 */
+  border-radius: 4rpx; /* 圆角边框 */
+}
+
+.has-checked .card.hidden:nth-child(2)::after {
+  content: "看";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-5deg); /* 抵消卡牌旋转 */
+  font-size: 16rpx; /* 略微增大字体 */
+  font-weight: bold;
+  color: #ffffff; /* 纯白色更醒目 */
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.7); /* 增强文字阴影 */
+  pointer-events: none; /* 确保不影响点击事件 */
+  animation: cardTextPulse 2s infinite;
+  background-color: rgba(0, 0, 0, 0.3); /* 半透明背景增加可读性 */
+  padding: 2rpx 4rpx; /* 添加内边距 */
+  border-radius: 4rpx; /* 圆角边框 */
+}
+
+.has-checked .card.hidden:nth-child(3)::after {
+  content: "牌";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-5deg); /* 抵消卡牌旋转 */
+  font-size: 16rpx; /* 略微增大字体 */
+  font-weight: bold;
+  color: #ffffff; /* 纯白色更醒目 */
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.7); /* 增强文字阴影 */
+  pointer-events: none; /* 确保不影响点击事件 */
+  animation: cardTextPulse 2s infinite;
+  background-color: rgba(0, 0, 0, 0.3); /* 半透明背景增加可读性 */
+  padding: 2rpx 4rpx; /* 添加内边距 */
+  border-radius: 4rpx; /* 圆角边框 */
+}
+
+/* 已看牌玩家的卡牌悬停效果 */
+.has-checked .card.hidden:hover {
+  transform: rotate(8deg) scale(1.05);
+  box-shadow: 0 0 12rpx rgba(100, 180, 255, 0.9);
+}
+
+/* 已看牌文字动画 - 优化单字显示效果 */
+@keyframes cardTextPulse {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) rotate(-5deg) scale(0.95); }
+  50% { opacity: 1.0; transform: translate(-50%, -50%) rotate(-5deg) scale(1.1); }
+  100% { opacity: 0.9; transform: translate(-50%, -50%) rotate(-5deg) scale(0.95); }
 }
 
 /* 当前玩家信息和牌 */
@@ -548,23 +700,39 @@
   justify-content: center;
   width: 100%;
   margin-top: 20rpx; /* 减小上边距 */
-  margin-bottom: -10rpx;
+  margin-bottom: -30rpx;
 }
 
 .current-player-card {
-  width: 90rpx; /* 缩小卡牌宽度为原来的约75% */
-  height: 120rpx; /* 缩小卡牌高度为原来的约75% */
+  width: 110rpx; /* 缩小卡牌宽度为原来的约75% */
+  height: 135rpx; /* 缩小卡牌高度为原来的约75% */
   background-color: #fff;
   border-radius: 8rpx; /* 减小圆角 */
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 40rpx; /* 缩小字体 */
+  font-size: 50rpx; /* 缩小字体 */
   color: #000000;
   box-shadow: 0 3rpx 6rpx rgba(0, 0, 0, 0.4); /* 减小阴影 */
   position: relative;
   border: 1rpx solid rgba(0, 0, 0, 0.2);
   z-index: 1; /* 基础z-index */
+}
+
+/* 花色颜色设置 */
+.current-player-card text {
+  position: relative;
+}
+
+/* 默认黑色花色（梅花和黑桃） */
+.current-player-card text {
+  color: #000000;
+}
+
+/* 红色花色（红桃和方块） */
+.current-player-card text[data-suit="♥"],
+.current-player-card text[data-suit="♦"] {
+  color: #ff0000;
 }
 
 /* 为不同卡牌设置不同的z-index，确保叠加顺序正确 */
@@ -647,9 +815,19 @@
 }
 
 /* 准备按钮区域 */
+/* 已被 waiting-player-area 替代，保留此样式以兼容其他可能的引用 */
 .ready-area {
   display: flex;
   justify-content: center;
+  padding: 10rpx;
+  margin: 20rpx 0;
+}
+
+/* 等待状态下的玩家区域 */
+.waiting-player-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 10rpx;
   position: absolute;
   bottom: 20rpx;
@@ -657,6 +835,26 @@
   transform: translateX(-50%);
   width: 90%;
   z-index: 5;
+}
+
+/* 等待状态下的玩家信息 */
+.waiting-player-info {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20rpx;
+}
+
+/* 等待状态下的玩家积分 */
+.waiting-player-score {
+  font-size: 32rpx;
+  color: #ffcc00;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  margin-bottom: 15rpx;
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  text-align: center;
 }
 
 .ready-btn {
