@@ -548,7 +548,16 @@ async function compareCards(event, openId) {
       data: {
         [`players.${loserIndex}.status`]: 'out',
         currentPlayerIndex: nextPlayerIndex,
-        lastActionTime: db.serverDate()
+        lastActionTime: db.serverDate(),
+        // 广播比牌事件，供所有客户端展示提示
+        compareEvent: {
+          from: openId,
+          to: targetPlayerId,
+          winner: compareResult > 0 ? openId : targetPlayerId,
+          loser: compareResult > 0 ? targetPlayerId : openId,
+          eventId: Date.now(),
+          ts: db.serverDate()
+        }
       }
     });
     

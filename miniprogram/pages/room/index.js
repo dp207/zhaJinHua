@@ -29,9 +29,10 @@ Page({
     showGameResultPopup: false, // 游戏结果弹窗显示状态
     gameResultMessage: '', // 游戏结果消息
     gameResultScores: [], // 游戏结果积分变化数据
-    // 比牌动画状态
-    showPkOverlay: false,
-    pkText: '',
+    // 比牌结果提示
+    showCompareResult: false,
+    compareLine1: '',
+    compareWin: false,
     // 当前最高下注
     currentMaxBet: 0
   },
@@ -136,6 +137,10 @@ Page({
 
   onUnload: function () {
     this.autoLeaveIfNeeded('unload');
+    if (this._compareResultTimer) {
+      clearTimeout(this._compareResultTimer);
+      this._compareResultTimer = null;
+    }
   },
 
   // 新增：进入后台或页面隐藏时也自动弃牌并离开，防重复
@@ -846,6 +851,24 @@ Page({
       });
       this.showGameResult(gameData);
     }
+
+    // 广播事件：比牌结果提示（所有客户端）
+    try {
+      if (gameData.compareEvent && gameData.compareEvent.eventId) {
+        if (this._lastCompareEventId !== gameData.compareEvent.eventId) {
+          this._lastCompareEventId = gameData.compareEvent.eventId;
+          const selfId = gameData.compareEvent.from; // 事件发起者
+          const targetId = gameData.compareEvent.to; // 目标
+          const winnerId = gameData.compareEvent.winner;
+          const isWinFromPerspective = winnerId === selfId; // 以发起者视角决定胜负
+          // 但你的需求是两行提示严格“A比牌B”“胜利/失败”，未指定视角差异
+          // 因此统一以事件发起者视角：A=selfId, B=targetId
+          this.showCompareResultToast(selfId, targetId, isWinFromPerspective);
+        }
+      }
+    } catch (e) {
+      console.warn('处理compareEvent失败:', e);
+    }
   },
 
   // 格式化玩家数据
@@ -1311,45 +1334,11 @@ Page({
           this.setData({
             players: updatedPlayers
           }, () => {
-            wx.showToast({
-              title: '比牌成功',
-              icon: 'success'
-            });
             console.log('比牌成功，保留卡牌可见性');
-            // 展示比牌动画
-            const selfId = this.data.userInfo._openid;
-            const selfPlayer = this.data.players.find(p => p.openId === selfId);
-            const targetPlayer = this.data.players.find(p => p.openId === targetPlayerId);
-            const selfName = this.truncateNickname(selfPlayer ? (selfPlayer.nickName || selfPlayer.nickname || '我') : '我');
-            const targetName = this.truncateNickname(targetPlayer ? (targetPlayer.nickName || targetPlayer.nickname || '对手') : '对手');
-            const win = res.result.winner === selfId;
-            const text = `${selfName} PK ${targetName} ${win ? '胜利' : '失败'}`;
-            this.setData({ showPkOverlay: true, pkText: text });
-            clearTimeout(this._pkTimer);
-            this._pkTimer = setTimeout(() => {
-              this.setData({ showPkOverlay: false, pkText: '' });
-            }, 1200);
           });
         } else {
-          wx.showToast({
-            title: '比牌成功',
-            icon: 'success'
-          });
           // 更新界面状态
           this.forceUpdate();
-          // 展示比牌动画（以当前用户为发起人视角）
-          const selfId = this.data.userInfo._openid;
-          const selfPlayer = this.data.players.find(p => p.openId === selfId);
-          const targetPlayer = this.data.players.find(p => p.openId === targetPlayerId);
-          const selfName = this.truncateNickname(selfPlayer ? (selfPlayer.nickName || selfPlayer.nickname || '我') : '我');
-          const targetName = this.truncateNickname(targetPlayer ? (targetPlayer.nickName || targetPlayer.nickname || '对手') : '对手');
-          const win = res.result.winner === selfId;
-          const text = `${selfName} PK ${targetName} ${win ? '胜利' : '失败'}`;
-          this.setData({ showPkOverlay: true, pkText: text });
-          clearTimeout(this._pkTimer);
-          this._pkTimer = setTimeout(() => {
-            this.setData({ showPkOverlay: false, pkText: '' });
-          }, 1200);
         }
       } else {
         wx.showToast({
@@ -1498,4 +1487,31 @@ Page({
   const maxLen = 6; // 可按需要调整，确保美观
   return trimmed.length > maxLen ? trimmed.slice(0, maxLen) : trimmed;
  },
+
+  // 显示比牌结果提示（1.2秒入场动画 + 静态停留至总计3秒，不拦截交互）
+  showCompareResultToast: function (selfId, targetPlayerId, isWin) {
+    const selfPlayer = this.data.players.find(p => p.openId === selfId);
+    const targetPlayer = this.data.players.find(p => p.openId === targetPlayerId);
+    const selfName = this.truncateNickname(selfPlayer ? (selfPlayer.nickName || selfPlayer.nickname || '我') : '我');
+    const targetName = this.truncateNickname(targetPlayer ? (targetPlayer.nickName || targetPlayer.nickname || '对手') : '对手');
+    const line1 = `${selfName} 比牌 ${targetName}`;
+
+    this.setData({
+      showCompareResult: true,
+      compareLine1: line1,
+      compareWin: !!isWin
+    });
+
+    if (this._compareResultTimer) {
+      clearTimeout(this._compareResultTimer);
+    }
+    this._compareResultTimer = setTimeout(() => {
+      this.setData({
+        showCompareResult: false,
+        compareLine1: '',
+        compareWin: false
+      });
+      this._compareResultTimer = null;
+    },4000);
+  },
 })

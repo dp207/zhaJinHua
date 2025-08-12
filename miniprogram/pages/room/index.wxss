@@ -1135,10 +1135,10 @@
   100% { box-shadow: 0 0 6rpx rgba(255, 255, 255, 0.3); }
 }
 
-/* 比牌效果覆盖层 */
-.pk-overlay {
+/* 比牌结果两行提示（不拦截点击） */
+.compare-result-toast {
   position: absolute;
-  top: 50%;
+  top: 30%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 20;
@@ -1147,22 +1147,48 @@
   border-radius: 16rpx;
   border: 2rpx solid rgba(255, 204, 0, 0.4);
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.5);
-  animation: pkFade 1.2s ease-in-out;
+  pointer-events: none;
+  animation: compareFade 1.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* 防止中文逐字换行 */
+  white-space: nowrap;
+  word-break: keep-all;
+  max-width: 80vw;
+  box-sizing: border-box;
 }
 
-.pk-text {
-  color: #ffcc00;
-  font-weight: 700;
-  font-size: 36rpx;
-  letter-spacing: 2rpx;
+.compare-result-toast .line1 {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 32rpx;
+  text-align: center;
+  margin-bottom: 10rpx;
+  /* 防止中文逐字换行 */
+  white-space: nowrap;
+  word-break: keep-all;
+  display: inline-block;
+}
+
+.compare-result-toast .line2 {
+  font-weight: 800;
+  font-size: 40rpx;
+  text-align: center;
   text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.8);
+  /* 防止中文逐字换行 */
+  white-space: nowrap;
+  word-break: keep-all;
+  display: inline-block;
 }
 
-@keyframes pkFade {
+.compare-result-toast .line2.win { color: #FFD700; }
+.compare-result-toast .line2.lose { color: #FF4D4F; }
+
+@keyframes compareFade {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
   15% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); }
-  85% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.98); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
 }
 
 .current-max-bet {

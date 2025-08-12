@@ -23,8 +23,9 @@
     <view class="poker-table">
       
       <!-- 比牌效果覆盖层 -->
-      <view class="pk-overlay" wx:if="{{showPkOverlay}}">
-        <text class="pk-text">{{pkText}}</text>
+      <view class="compare-result-toast" wx:if="{{showCompareResult}}">
+        <text class="line1">{{compareLine1}}</text>
+        <text class="line2 {{compareWin ? 'win' : 'lose'}}">{{compareWin ? '胜利' : '失败'}}</text>
       </view>
       
       <!-- 游戏状态栏 -->
