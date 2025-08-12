@@ -529,6 +529,35 @@ async function compareCards(event, openId) {
       return { success: false, message: '目标玩家已经弃牌或出局' };
     }
     
+    // 计算当前最高下注（归一到未看牌基准，取整避免小数）
+    const maxBet = Math.max(
+      ...game.players
+        .filter(p => p.status === 'playing')
+        .map(p => (p.hasChecked ? Math.ceil((p.currentBet || 0) / 2) : (p.currentBet || 0)))
+    );
+    
+    // 计算比牌需要的积分，使用当前最高下注作为基准分
+    const hasChecked = !!player.hasChecked;
+    const compareScore = hasChecked ? maxBet * 2 : maxBet;
+    
+    // 查找玩家在房间中的索引
+    const roomPlayerIndex = room.players.findIndex(p => p.openId === openId);
+    if (roomPlayerIndex === -1) {
+      return { success: false, message: '您不在该房间中' };
+    }
+    
+    // 检查玩家积分是否足够
+    if (room.players[roomPlayerIndex].score < compareScore) {
+      return { success: false, message: '您的积分不足' };
+    }
+    
+    // 更新玩家积分
+    await db.collection('rooms').where({ roomId: roomId }).update({
+      data: {
+        [`players.${roomPlayerIndex}.score`]: _.inc(-compareScore)
+      }
+    });
+    
     // 比较牌型
     const compareResult = compareHands(player.handCards, targetPlayer.handCards);
     
@@ -547,6 +576,8 @@ async function compareCards(event, openId) {
     await db.collection('games').where({ gameId: room.currentGameId }).update({
       data: {
         [`players.${loserIndex}.status`]: 'out',
+        [`players.${playerIndex}.totalBet`]: player.totalBet + compareScore,
+        totalPot: _.inc(compareScore),
         currentPlayerIndex: nextPlayerIndex,
         lastActionTime: db.serverDate(),
         // 广播比牌事件，供所有客户端展示提示

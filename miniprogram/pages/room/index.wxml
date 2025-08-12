@@ -24,7 +24,11 @@
       
       <!-- 比牌效果覆盖层 -->
       <view class="compare-result-toast" wx:if="{{showCompareResult}}">
-        <text class="line1">{{compareLine1}}</text>
+        <view class="line1">
+          <text class="player-name">{{comparePlayer1}}</text>
+          <text class="compare-action">比牌</text>
+          <text class="player-name">{{comparePlayer2}}</text>
+        </view>
         <text class="line2 {{compareWin ? 'win' : 'lose'}}">{{compareWin ? '胜利' : '失败'}}</text>
       </view>
       

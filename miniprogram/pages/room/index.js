@@ -31,7 +31,8 @@ Page({
     gameResultScores: [], // 游戏结果积分变化数据
     // 比牌结果提示
     showCompareResult: false,
-    compareLine1: '',
+    comparePlayer1: '',
+    comparePlayer2: '',
     compareWin: false,
     // 当前最高下注
     currentMaxBet: 0
@@ -845,6 +846,9 @@ Page({
       if (gameData.winnerId) {
         newRoomInfo.dealerId = gameData.winnerId;
       }
+      // 重置看牌状态标记，确保新一局游戏时看牌状态正确
+      this._reportedHasChecked = false;
+      
       this.setData({
         players: resetPlayers,
         roomInfo: newRoomInfo
@@ -1299,14 +1303,45 @@ Page({
   // 确认比牌
   confirmCompare: function (e) {
     const targetPlayerId = e.currentTarget.dataset.playerId
-
+    
     this.setData({
       showCompareSelect: false
     })
 
-    wx.showLoading({
-      title: '比牌中...'
-    })
+    // 获取当前玩家是否已看牌
+    const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
+    const myPlayer = myPlayerIndex !== -1 ? this.data.players[myPlayerIndex] : null;
+    const hasChecked = !!(myPlayer && myPlayer.hasChecked);
+    
+    // 计算比牌需要的积分，使用当前基准分而不是初始底分
+    const currentBaseScore = this.data.currentMaxBet || this.data.baseScore;
+    const compareScore = hasChecked ? currentBaseScore * 2 : currentBaseScore;
+    
+    // 获取目标玩家昵称
+    const targetPlayer = this.data.players.find(p => p.openId === targetPlayerId);
+    const targetName = targetPlayer ? (targetPlayer.nickName || targetPlayer.nickname || '对手') : '对手';
+    
+    // 显示确认弹窗
+    wx.showModal({
+      title: '比牌确认',
+      content: `是否花费 ${compareScore} 积分与 ${targetName} 比牌？${hasChecked ? '(已看牌，2倍当前基准分)' : '(未看牌，当前基准分)'}`,
+      success: (res) => {
+        if (res.confirm) {
+          // 用户确认比牌
+          wx.showLoading({
+            title: '比牌中...'
+          })
+          this.doCompareCards(targetPlayerId);
+        } else {
+          // 用户取消比牌
+          console.log('用户取消比牌');
+        }
+      }
+    });
+  },
+  
+  // 执行比牌操作
+  doCompareCards: function(targetPlayerId) {
     wx.cloud.callFunction({
       name: 'gameLogic',
       data: {
@@ -1494,11 +1529,11 @@ Page({
     const targetPlayer = this.data.players.find(p => p.openId === targetPlayerId);
     const selfName = this.truncateNickname(selfPlayer ? (selfPlayer.nickName || selfPlayer.nickname || '我') : '我');
     const targetName = this.truncateNickname(targetPlayer ? (targetPlayer.nickName || targetPlayer.nickname || '对手') : '对手');
-    const line1 = `${selfName} 比牌 ${targetName}`;
 
     this.setData({
       showCompareResult: true,
-      compareLine1: line1,
+      comparePlayer1: selfName,
+      comparePlayer2: targetName,
       compareWin: !!isWin
     });
 
@@ -1508,10 +1543,11 @@ Page({
     this._compareResultTimer = setTimeout(() => {
       this.setData({
         showCompareResult: false,
-        compareLine1: '',
+        comparePlayer1: '',
+        comparePlayer2: '',
         compareWin: false
       });
       this._compareResultTimer = null;
-    },4000);
+    }, 4000);
   },
 })

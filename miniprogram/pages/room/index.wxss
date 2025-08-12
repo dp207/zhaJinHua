@@ -1168,7 +1168,22 @@
   /* 防止中文逐字换行 */
   white-space: nowrap;
   word-break: keep-all;
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.compare-result-toast .line1 .player-name {
+  font-size: 30rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.compare-result-toast .line1 .compare-action {
+  font-size: 38rpx;
+  color:rgb(235, 121, 45);
+  font-weight: 700;
+  margin: 0 10rpx;
 }
 
 .compare-result-toast .line2 {
