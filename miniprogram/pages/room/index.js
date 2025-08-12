@@ -130,17 +130,14 @@ Page({
   },
 
   onUnload: function () {
-    // 离开页面时取消监听
-    if (this.roomListener) {
-      this.roomListener.close()
-    }
-    if (this.gameListener) {
-      this.gameListener.close()
-    }
-    // 调用云函数离开房间
-    this.leaveRoom()
+    this.autoLeaveIfNeeded('unload');
   },
 
+  // 新增：进入后台或页面隐藏时也自动弃牌并离开，防重复
+  //onHide: function () {
+  //  this.autoLeaveIfNeeded('hide');
+  //},
+  
   // 加入房间
   joinRoom: function (initialScore) {
     wx.showLoading({
@@ -293,6 +290,12 @@ Page({
 
   // 离开房间
   leaveRoom: function () {
+    // 防重复调用云函数
+    if (this._leftRoom) {
+      return;
+    }
+    this._leftRoom = true;
+
     wx.showLoading({
       title: '离开房间中',
     })
@@ -331,6 +334,11 @@ Page({
   
   // 离开房间按钮点击事件
   onLeaveRoom: function () {
+    // 防重复点击
+    if (this._leaving) {
+      return;
+    }
+
     // 检查当前游戏状态，如果正在游戏中且玩家未弃牌，则提示离开视为放弃
     const isPlaying = this.data.gameStatus === 'playing';
     const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
@@ -343,6 +351,9 @@ Page({
         content: '离开房间视为放弃，确定要离开吗？',
         success: (res) => {
           if (res.confirm) {
+            // 标记离开进行中并清理监听
+            this._leaving = true;
+            this.cleanupListeners();
             // 先执行弃牌逻辑
             wx.showLoading({
               title: '处理中...'
@@ -356,19 +367,10 @@ Page({
               }
             }).then(res => {
               wx.hideLoading();
-              if (res.result && res.result.success) {
-                console.log('离开房间前弃牌成功');
-                // 弃牌成功后离开房间
-                this.leaveRoom();
-              } else {
-                console.error('弃牌失败:', res.result.message);
-                // 即使弃牌失败也离开房间
-                this.leaveRoom();
-              }
+              // 无论成功与否都继续离开
+              this.leaveRoom();
             }).catch(err => {
               wx.hideLoading();
-              console.error('弃牌操作失败:', err);
-              // 出错也离开房间
               this.leaveRoom();
             });
           }
@@ -381,11 +383,67 @@ Page({
         content: '确定要离开房间吗？',
         success: (res) => {
           if (res.confirm) {
+            // 标记离开进行中并清理监听
+            this._leaving = true;
+            this.cleanupListeners();
             this.leaveRoom();
           }
         }
       });
     }
+  },
+
+  // 新增：统一的自动弃牌并离开处理（用于顶部返回/onUnload、上滑关闭/onHide 等）
+  autoLeaveIfNeeded: function (source) {
+    // 若已开始离开流程，直接返回
+    if (this._leaving) {
+      return;
+    }
+    this._leaving = true;
+
+    // 先清理监听，避免重复触发
+    this.cleanupListeners();
+
+    const isPlaying = this.data.gameStatus === 'playing';
+    const myPlayerIndex = this.data.players.findIndex(p => p.openId === (this.data.userInfo && this.data.userInfo._openid));
+    const hasNotFolded = myPlayerIndex !== -1 && this.data.players[myPlayerIndex].status === 'playing';
+
+    if (isPlaying && hasNotFolded) {
+      // 无提示自动弃牌
+      wx.cloud.callFunction({
+        name: 'gameLogic',
+        data: {
+          action: 'foldCards',
+          roomId: this.data.roomId,
+          isLeaving: true
+        }
+      }).then(() => {
+        this.leaveRoom();
+      }).catch(() => {
+        // 即使弃牌失败也继续离开
+        this.leaveRoom();
+      });
+    } else {
+      // 未在游戏或已弃牌，直接离开
+      this.leaveRoom();
+    }
+  },
+
+  // 新增：统一关闭监听
+  cleanupListeners: function () {
+    try {
+      if (this.roomListener) {
+        this.roomListener.close();
+        this.roomListener = null;
+      }
+    } catch (e) { }
+
+    try {
+      if (this.gameListener) {
+        this.gameListener.close();
+        this.gameListener = null;
+      }
+    } catch (e) { }
   },
 
   // 设置房间数据监听
