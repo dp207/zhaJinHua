@@ -1101,3 +1101,78 @@
   background-color: #666666;
   color: #999999;
 }
+
+/* 点击看牌提示与动画 */
+.current-player-card.clickable {
+  position: relative;
+  border: 2rpx solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 10rpx rgba(255, 255, 255, 0.5);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8rpx;
+}
+
+.card-overlay-text {
+  color: #ffffff;
+  font-size: 24rpx;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.5);
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 6rpx rgba(255, 255, 255, 0.3); }
+  50% { box-shadow: 0 0 16rpx rgba(255, 255, 255, 0.8); }
+  100% { box-shadow: 0 0 6rpx rgba(255, 255, 255, 0.3); }
+}
+
+/* 比牌效果覆盖层 */
+.pk-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 24rpx 40rpx;
+  border-radius: 16rpx;
+  border: 2rpx solid rgba(255, 204, 0, 0.4);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.5);
+  animation: pkFade 1.2s ease-in-out;
+}
+
+.pk-text {
+  color: #ffcc00;
+  font-weight: 700;
+  font-size: 36rpx;
+  letter-spacing: 2rpx;
+  text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.8);
+}
+
+@keyframes pkFade {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); }
+  85% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.98); }
+}
+
+.current-max-bet {
+  margin-top: 12rpx;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 12rpx 28rpx;
+  border-radius: 28rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #ffffff;
+  box-shadow: 0 3rpx 10rpx rgba(0, 0, 0, 0.45);
+  border: 2rpx solid rgba(255, 255, 255, 0.18);
+}

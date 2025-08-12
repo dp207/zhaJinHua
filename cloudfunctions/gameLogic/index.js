@@ -292,12 +292,29 @@ async function followBet(event, openId) {
       return { success: false, message: '您已经弃牌或出局' };
     }
     
-    // 计算需要跟注的金额
-    const maxBet = Math.max(...game.players.filter(p => p.status === 'playing').map(p => p.currentBet));
-    const betAmount = maxBet - player.currentBet;
+    // 计算当前最高下注（归一到未看牌基准，取整避免小数）
+    const maxBet = Math.max(
+      ...game.players
+        .filter(p => p.status === 'playing')
+        .map(p => (p.hasChecked ? Math.ceil((p.currentBet || 0) / 2) : (p.currentBet || 0)))
+    );
+    
+    // 若玩家已看牌，跟注为当前下注的两倍；否则为补齐到当前最高
+    const hasChecked = !!player.hasChecked;
+    const targetBet = hasChecked ? (maxBet * 2) : maxBet;
+    const betAmount = targetBet;
     
     if (betAmount <= 0) {
-      return { success: false, message: '当前没有需要跟注的金额' };
+      // 不需要补注也视为有效跟注，推进回合
+      const nextPlayerIndex = getNextValidPlayerIndex(game.players, playerIndex);
+      await db.collection('games').where({ gameId: room.currentGameId }).update({
+        data: {
+          currentPlayerIndex: nextPlayerIndex,
+          lastActionTime: db.serverDate()
+        }
+      });
+      await checkGameEnd(room.currentGameId);
+      return { success: true, message: '跟注成功' };
     }
     
     // 查找玩家在房间中的索引
@@ -319,12 +336,11 @@ async function followBet(event, openId) {
     });
     
     // 更新游戏数据
-    // 计算下一个有效玩家的索引（排除状态为fold的玩家）
     const nextPlayerIndex = getNextValidPlayerIndex(game.players, playerIndex);
     
     await db.collection('games').where({ gameId: room.currentGameId }).update({
       data: {
-        [`players.${playerIndex}.currentBet`]: maxBet,
+        [`players.${playerIndex}.currentBet`]: targetBet,
         [`players.${playerIndex}.totalBet`]: player.totalBet + betAmount,
         totalPot: _.inc(betAmount),
         currentPlayerIndex: nextPlayerIndex,
@@ -332,7 +348,6 @@ async function followBet(event, openId) {
       }
     });
     
-    // 检查是否需要结束游戏
     await checkGameEnd(room.currentGameId);
     
     return { success: true, message: '跟注成功' };
@@ -345,10 +360,10 @@ async function followBet(event, openId) {
 // 加注
 async function raiseBet(event, openId) {
   const { roomId, amount } = event;
-  const raiseAmount = parseInt(amount);
+  const targetBet = parseInt(amount); // 目标本轮下注（绝对值）
   
-  if (isNaN(raiseAmount) || raiseAmount <= 0) {
-    return { success: false, message: '加注金额无效' };
+  if (isNaN(targetBet) || targetBet <= 0) {
+    return { success: false, message: '下注金额无效' };
   }
   
   try {
@@ -387,13 +402,34 @@ async function raiseBet(event, openId) {
       return { success: false, message: '您已经弃牌或出局' };
     }
     
-    // 计算当前最高下注
-    const maxBet = Math.max(...game.players.filter(p => p.status === 'playing').map(p => p.currentBet));
+    // 计算当前最高下注（归一到未看牌基准，取整避免小数）
+    const maxBet = Math.max(
+      ...game.players
+        .filter(p => p.status === 'playing')
+        .map(p => (p.hasChecked ? Math.ceil((p.currentBet || 0) / 2) : (p.currentBet || 0)))
+    );
     
-    // 检查加注金额是否合法（必须大于当前最高下注）
-    const newBet = player.currentBet + raiseAmount;
-    if (newBet <= maxBet) {
-      return { success: false, message: '加注金额必须大于当前最高下注' };
+    // 规则：未看牌 targetBet >= maxBet；已看牌 targetBet >= 2*maxBet
+    if (!player.hasChecked && targetBet < maxBet) {
+      return { success: false, message: '下注需不小于当前下注' };
+    }
+    if (player.hasChecked && targetBet < maxBet * 2) {
+      return { success: false, message: '看牌后下注需不小于当前下注的2倍' };
+    }
+  
+    // 计算需要额外支付的积分 = 目标下注 - 当前个人下注
+    const delta = targetBet;
+    if (delta <= 0) {
+      // 视为一次有效操作，推进回合但不扣分
+      const nextPlayerIndex = getNextValidPlayerIndex(game.players, playerIndex);
+      await db.collection('games').where({ gameId: room.currentGameId }).update({
+        data: {
+          currentPlayerIndex: nextPlayerIndex,
+          lastActionTime: db.serverDate()
+        }
+      });
+      await checkGameEnd(room.currentGameId);
+      return { success: true, message: '下注成功' };
     }
     
     // 查找玩家在房间中的索引
@@ -403,37 +439,35 @@ async function raiseBet(event, openId) {
     }
     
     // 检查玩家积分是否足够
-    if (room.players[roomPlayerIndex].score < raiseAmount) {
+    if (room.players[roomPlayerIndex].score < delta) {
       return { success: false, message: '您的积分不足' };
     }
     
     // 更新玩家积分
     await db.collection('rooms').where({ roomId: roomId }).update({
       data: {
-        [`players.${roomPlayerIndex}.score`]: _.inc(-raiseAmount)
+        [`players.${roomPlayerIndex}.score`]: _.inc(-delta)
       }
     });
     
     // 更新游戏数据
-    // 计算下一个有效玩家的索引（排除状态为fold的玩家）
     const nextPlayerIndex = getNextValidPlayerIndex(game.players, playerIndex);
     
     await db.collection('games').where({ gameId: room.currentGameId }).update({
       data: {
-        [`players.${playerIndex}.currentBet`]: newBet,
-        [`players.${playerIndex}.totalBet`]: player.totalBet + raiseAmount,
-        totalPot: _.inc(raiseAmount),
+        [`players.${playerIndex}.currentBet`]: targetBet,
+        [`players.${playerIndex}.totalBet`]: player.totalBet + delta,
+        totalPot: _.inc(delta),
         currentPlayerIndex: nextPlayerIndex,
         lastActionTime: db.serverDate()
       }
     });
     
-    // 检查是否需要结束游戏
     await checkGameEnd(room.currentGameId);
     
-    return { success: true, message: '加注成功' };
+    return { success: true, message: '下注成功' };
   } catch (error) {
-    console.error('加注错误:', error);
+    console.error('下注错误:', error);
     return { success: false, message: error.message };
   }
 }

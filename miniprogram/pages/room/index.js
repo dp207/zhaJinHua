@@ -28,7 +28,12 @@ Page({
     showCopyToast: false, // 复制成功提示
     showGameResultPopup: false, // 游戏结果弹窗显示状态
     gameResultMessage: '', // 游戏结果消息
-    gameResultScores: [] // 游戏结果积分变化数据
+    gameResultScores: [], // 游戏结果积分变化数据
+    // 比牌动画状态
+    showPkOverlay: false,
+    pkText: '',
+    // 当前最高下注
+    currentMaxBet: 0
   },
 
   // 复制房间号功能
@@ -665,10 +670,30 @@ Page({
     console.log('游戏玩家数据:', JSON.stringify(gameData.players));
     
     // 更新总下注池
-    this.setData({
-      totalPot: gameData.totalPot || 0
-    })
+    try {
+      const pot = (gameData.players || []).reduce((acc, p) => acc + (p.totalBet || 0), 0);
+      this.setData({ totalPot: pot });
+    } catch (e) {
+      console.warn('计算总下注失败，回退使用后端字段:', e);
+      this.setData({ totalPot: gameData.totalPot || 0 });
+    }
     console.log('更新总下注池:', gameData.totalPot || 0);
+
+    // 计算并更新当前最高下注
+    try {
+      const maxBet = (gameData.players || [])
+        .filter(p => p.status === 'playing')
+        .map(p => {
+          const bet = p.currentBet || 0;
+          return p.hasChecked ? bet / 2 : bet; // 归一到未看牌基准
+        })
+        .reduce((acc, v) => Math.max(acc, v), 0);
+      if (Number.isFinite(maxBet)) {
+        this.setData({ currentMaxBet: maxBet });
+      }
+    } catch (e) {
+      console.warn('计算当前最高下注失败:', e);
+    }
 
     // 更新玩家数据（手牌、下注等）
     console.log('开始更新玩家数据，当前玩家数量:', this.data.players.length);
@@ -1037,62 +1062,48 @@ Page({
     }
   },
 
-  // 看牌按钮点击
-  onCheck: function () {
-    wx.showLoading({
-      title: '看牌中...'
-    })
-    wx.cloud.callFunction({
-      name: 'gameLogic',
-      data: {
-        action: 'checkCards',
-        roomId: this.data.roomId
+  // 新增：点击当前玩家单张牌逐张翻开，首次翻牌上报hasChecked
+  onTapMyCard: function (e) {
+    const cardIndex = e && e.currentTarget && typeof e.currentTarget.dataset.cardIndex !== 'undefined'
+      ? Number(e.currentTarget.dataset.cardIndex)
+      : -1;
+
+    // 基本校验
+    if (this.data.gameStatus !== 'playing') return;
+    const myOpenId = this.data.userInfo && this.data.userInfo._openid;
+    const myPlayerIndex = this.data.players.findIndex(p => p.openId === myOpenId);
+    if (myPlayerIndex === -1) return;
+    const myPlayer = this.data.players[myPlayerIndex];
+    if (!myPlayer.handCards || cardIndex < 0 || cardIndex >= myPlayer.handCards.length) return;
+    const targetCard = myPlayer.handCards[cardIndex];
+    if (!targetCard || targetCard.isVisible) return; // 已可见则不处理
+
+    // 本地更新：将该张牌设为可见
+    const updatedPlayers = [...this.data.players];
+    const updatedHand = [...updatedPlayers[myPlayerIndex].handCards];
+    updatedHand[cardIndex] = { ...targetCard, isVisible: true };
+    updatedPlayers[myPlayerIndex] = { ...updatedPlayers[myPlayerIndex], handCards: updatedHand };
+
+    // 首次翻开任意一张牌，视为已看牌：仅上报一次
+    const needReport = !this._reportedHasChecked && !updatedPlayers[myPlayerIndex].hasChecked;
+    if (needReport) {
+      updatedPlayers[myPlayerIndex].hasChecked = true;
+      this._reportedHasChecked = true;
+    }
+
+    this.setData({ players: updatedPlayers }, () => {
+      if (needReport) {
+        wx.cloud.callFunction({
+          name: 'gameLogic',
+          data: { action: 'checkCards', roomId: this.data.roomId }
+        }).then(res => {
+          // 成功即可，不额外处理牌面（本地已翻开）
+        }).catch(err => {
+          // 失败也不回滚本地hasChecked，避免影响体验
+          console.warn('checkCards failed:', err);
+        });
       }
-    }).then(res => {
-      wx.hideLoading()
-      if (res.result && res.result.success) {
-        // 更新卡牌可见性
-        const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
-        if (myPlayerIndex !== -1 && res.result.cards) {
-          const updatedPlayers = [...this.data.players];
-          // 设置卡牌为可见
-          updatedPlayers[myPlayerIndex].handCards = res.result.cards.map(card => ({
-            ...card,
-            isVisible: true // 设置卡牌为可见
-          }));
-          // 设置玩家已看牌状态
-          updatedPlayers[myPlayerIndex].hasChecked = true;
-          
-          this.setData({
-            players: updatedPlayers
-          }, () => {
-            wx.showToast({
-              title: '看牌成功',
-              icon: 'success'
-            });
-            console.log('卡牌已设置为可见，玩家已看牌状态已更新');
-          });
-        } else {
-          wx.showToast({
-            title: '看牌成功',
-            icon: 'success'
-          });
-          // 更新界面状态
-          this.forceUpdate();
-        }
-      } else {
-        wx.showToast({
-          title: res.result.message || '看牌失败',
-          icon: 'none'
-        })
-      }
-    }).catch(err => {
-      wx.hideLoading()
-      wx.showToast({
-        title: '操作失败: ' + err.message,
-        icon: 'none'
-      })
-    })
+    });
   },
 
   // 跟注按钮点击
@@ -1175,7 +1186,7 @@ Page({
     console.log('=== confirmRaise函数被调用 - 时间:', new Date().toLocaleString(), '===');
     const amount = parseInt(this.data.raiseAmount)
     if (isNaN(amount) || amount <= 0) {
-      console.error('加注金额无效:', this.data.raiseAmount);
+      console.error('下注金额无效:', this.data.raiseAmount);
       wx.showToast({
         title: '请输入有效金额',
         icon: 'none'
@@ -1183,107 +1194,54 @@ Page({
       return
     }
 
-    this.setData({
-      showRaiseInput: false
-    })
+    // 前端校验：绝对下注额规则
+    const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
+    const myPlayer = myPlayerIndex !== -1 ? this.data.players[myPlayerIndex] : null;
+    const hasChecked = !!(myPlayer && myPlayer.hasChecked);
+    const currentMax = this.data.currentMaxBet || 0;
 
-    console.log('准备调用raiseBet云函数，金额:', amount, '房间ID:', this.data.roomId);
-    console.log('当前玩家状态:', this.data.players.map(p => {
-      return {
-        nickname: p.nickname,
-        openId: p.openId,
-        status: p.status,
-        currentBet: p.currentBet,
-        totalBet: p.totalBet,
-        handCardsCount: p.handCards ? p.handCards.length : 0
-      };
-    }));
-    
-    wx.showLoading({
-      title: '加注中...'
-    })
+    // 未看牌: amount >= 当前下注；已看牌: amount >= 2 * 当前下注
+    if (!hasChecked && amount < currentMax) {
+      wx.showToast({ title: '下注需不小于当前下注', icon: 'none' });
+      return;
+    }
+    if (hasChecked && amount < currentMax * 2) {
+      wx.showToast({ title: '看牌后下注需不小于当前下注的2倍', icon: 'none' });
+      return;
+    }
+
+    this.setData({ showRaiseInput: false })
+
+    console.log('准备调用raiseBet云函数，金额(目标下注):', amount, '房间ID:', this.data.roomId);
+
+    wx.showLoading({ title: '下注中...' })
     wx.cloud.callFunction({
       name: 'gameLogic',
-      data: {
-        action: 'raiseBet',
-        roomId: this.data.roomId,
-        amount: amount
-      }
+      data: { action: 'raiseBet', roomId: this.data.roomId, amount: amount }
     }).then(res => {
       wx.hideLoading()
-      console.log('=== raiseBet云函数返回结果 - 时间:', new Date().toLocaleString(), '===');
-      console.log('raiseBet云函数返回结果:', JSON.stringify(res.result));
       if (res.result && res.result.success) {
-        console.log('加注成功，检查是否触发updateGameData函数');
-        console.log('当前游戏状态:', this.data.gameStatus);
-        console.log('当前游戏ID:', this.data.roomInfo ? this.data.roomInfo.currentGameId : 'undefined');
-        console.log('当前游戏监听器状态:', this.gameListener ? '已设置' : '未设置');
-        
         // 保留当前玩家的卡牌可见性
-        const myPlayerIndex = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
-        console.log('当前玩家openId:', this.data.userInfo._openid);
-        console.log('查找当前玩家结果:', myPlayerIndex !== -1 ? '找到' : '未找到');
-        
-        if (myPlayerIndex !== -1) {
-          console.log('找到当前玩家，索引:', myPlayerIndex);
-          console.log('当前玩家数据:', JSON.stringify(this.data.players[myPlayerIndex]));
-          
+        const myIdx = this.data.players.findIndex(p => p.openId === this.data.userInfo._openid);
+        if (myIdx !== -1) {
           const updatedPlayers = [...this.data.players];
-          // 确保卡牌的isVisible属性保持不变
-          if (updatedPlayers[myPlayerIndex].handCards && updatedPlayers[myPlayerIndex].handCards.length > 0) {
-            console.log('当前玩家有手牌，数量:', updatedPlayers[myPlayerIndex].handCards.length);
-            console.log('手牌详情:', JSON.stringify(updatedPlayers[myPlayerIndex].handCards));
-            
-            // 保留原有的isVisible属性
-            const preservedCards = updatedPlayers[myPlayerIndex].handCards.map(card => {
-              const cardValue = card.rank || card.value;
-              const cardKey = `${card.suit}_${cardValue}`;
-              console.log(`保留手牌可见性: ${cardKey} = ${card.isVisible}`);
-              return {
-                ...card,
-                isVisible: card.isVisible // 保留原有的可见性
-              };
-            });
-            updatedPlayers[myPlayerIndex].handCards = preservedCards;
-            console.log('保留可见性后的手牌:', JSON.stringify(preservedCards));
-          } else {
-            console.log('当前玩家没有手牌或手牌为空');
+          if (updatedPlayers[myIdx].handCards && updatedPlayers[myIdx].handCards.length > 0) {
+            const preservedCards = updatedPlayers[myIdx].handCards.map(card => ({ ...card, isVisible: card.isVisible }));
+            updatedPlayers[myIdx].handCards = preservedCards;
           }
-          
-          console.log('更新前的玩家数据:', JSON.stringify(this.data.players));
-          this.setData({
-            players: updatedPlayers
-          }, () => {
-            console.log('更新后的玩家数据:', JSON.stringify(this.data.players));
-            wx.showToast({
-              title: '加注成功',
-              icon: 'success'
-            });
-            console.log('加注成功，保留卡牌可见性');
+          this.setData({ players: updatedPlayers }, () => {
+            wx.showToast({ title: '下注成功', icon: 'success' });
           });
         } else {
-          console.log('未找到当前玩家，直接更新界面');
-          wx.showToast({
-            title: '加注成功',
-            icon: 'success'
-          });
-          // 更新界面状态
+          wx.showToast({ title: '下注成功', icon: 'success' });
           this.forceUpdate();
         }
       } else {
-        console.error('加注失败:', res.result.message);
-        wx.showToast({
-          title: res.result.message || '加注失败',
-          icon: 'none'
-        })
+        wx.showToast({ title: res.result.message || '下注失败', icon: 'none' })
       }
     }).catch(err => {
-      console.error('调用raiseBet云函数失败:', err);
       wx.hideLoading()
-      wx.showToast({
-        title: '操作失败: ' + err.message,
-        icon: 'none'
-      })
+      wx.showToast({ title: '操作失败: ' + err.message, icon: 'none' })
     })
   },
 
@@ -1358,6 +1316,19 @@ Page({
               icon: 'success'
             });
             console.log('比牌成功，保留卡牌可见性');
+            // 展示比牌动画
+            const selfId = this.data.userInfo._openid;
+            const selfPlayer = this.data.players.find(p => p.openId === selfId);
+            const targetPlayer = this.data.players.find(p => p.openId === targetPlayerId);
+            const selfName = this.truncateNickname(selfPlayer ? (selfPlayer.nickName || selfPlayer.nickname || '我') : '我');
+            const targetName = this.truncateNickname(targetPlayer ? (targetPlayer.nickName || targetPlayer.nickname || '对手') : '对手');
+            const win = res.result.winner === selfId;
+            const text = `${selfName} PK ${targetName} ${win ? '胜利' : '失败'}`;
+            this.setData({ showPkOverlay: true, pkText: text });
+            clearTimeout(this._pkTimer);
+            this._pkTimer = setTimeout(() => {
+              this.setData({ showPkOverlay: false, pkText: '' });
+            }, 1200);
           });
         } else {
           wx.showToast({
@@ -1366,6 +1337,19 @@ Page({
           });
           // 更新界面状态
           this.forceUpdate();
+          // 展示比牌动画（以当前用户为发起人视角）
+          const selfId = this.data.userInfo._openid;
+          const selfPlayer = this.data.players.find(p => p.openId === selfId);
+          const targetPlayer = this.data.players.find(p => p.openId === targetPlayerId);
+          const selfName = this.truncateNickname(selfPlayer ? (selfPlayer.nickName || selfPlayer.nickname || '我') : '我');
+          const targetName = this.truncateNickname(targetPlayer ? (targetPlayer.nickName || targetPlayer.nickname || '对手') : '对手');
+          const win = res.result.winner === selfId;
+          const text = `${selfName} PK ${targetName} ${win ? '胜利' : '失败'}`;
+          this.setData({ showPkOverlay: true, pkText: text });
+          clearTimeout(this._pkTimer);
+          this._pkTimer = setTimeout(() => {
+            this.setData({ showPkOverlay: false, pkText: '' });
+          }, 1200);
         }
       } else {
         wx.showToast({
@@ -1506,4 +1490,12 @@ Page({
     });
     // 可根据实际需求同步到云端
   },
+ 
+ // 辅助：昵称截断（过长仅显示前若干字符）
+ truncateNickname: function (name) {
+  if (!name || typeof name !== 'string') return '玩家';
+  const trimmed = name.trim();
+  const maxLen = 6; // 可按需要调整，确保美观
+  return trimmed.length > maxLen ? trimmed.slice(0, maxLen) : trimmed;
+ },
 })

@@ -21,11 +21,21 @@
   <view class="game-area">
     <!-- 牌桌 -->
     <view class="poker-table">
+      
+      <!-- 比牌效果覆盖层 -->
+      <view class="pk-overlay" wx:if="{{showPkOverlay}}">
+        <text class="pk-text">{{pkText}}</text>
+      </view>
+      
       <!-- 游戏状态栏 -->
       <view class="game-status-bar">
         <!-- 下注池 -->
         <view class="pot">
           <text>总下注: {{totalPot}}</text>
+        </view>
+        <!-- 当前最高下注显示 -->
+        <view class="current-max-bet" wx:if="{{gameStatus === 'playing'}}">
+          <text>当前基准分：{{currentMaxBet}}</text>
         </view>
         <!-- 当前玩家提示 -->
        <!-- <view class="current-player-tip" wx:if="{{gameStatus === 'playing' && gameData.currentPlayerIndex !== undefined && gameData.players && gameData.players[gameData.currentPlayerIndex]}}">
@@ -41,7 +51,7 @@
             <!-- 当前玩家头像动画效果通过CSS实现，不需要额外的指示器元素 -->
             <image class="avatar" src="{{item.avatarUrl}}" bindtap="showPlayerInfo" data-player-id="{{item.openId}}"></image>
             <text class="status">{{item.status}}</text>
-            <text class="bet" wx:if="{{item.currentBet > 0}}">下注：{{item.currentBet}}</text>
+                          <text class="bet" wx:if="{{item.totalBet > 0}}">下注：{{item.totalBet}}</text>
             <text class="dealer-badge" wx:if="{{item.isDealer}}">庄家</text>
             <!-- 玩家手牌 -->
             <view class="hand-cards {{item.hasChecked ? 'has-checked' : ''}}" wx:if="{{item.handCards && item.handCards.length > 0}}">
@@ -63,14 +73,22 @@
             <!-- 当前玩家信息显示在牌上方，不显示昵称 -->
             <view >
               <text class="current-player-score">积分：{{item.score}}</text>
-              <text class="current-player-bet" wx:if="{{item.currentBet > 0}}">下注：{{item.currentBet}}</text>
+              <text class="current-player-bet" wx:if="{{item.totalBet > 0}}">下注：{{item.totalBet}}</text>
               <text class="current-player-status">{{item.status}}</text>
             </view>
             <!-- 只显示当前玩家的牌，没看牌前显示牌背 -->
             <view class="current-player-cards" wx:if="{{item.handCards && item.handCards.length > 0}}">
               <block wx:for="{{item.handCards}}" wx:for-item="card" wx:key="index">
-                <view class="current-player-card {{card.isVisible ? 'visible' : 'hidden'}}">
+                <view 
+                  class="current-player-card {{card.isVisible ? 'visible' : 'hidden'}} {{!card.isVisible ? 'clickable' : ''}}"
+                  bindtap="onTapMyCard"
+                  data-card-index="{{index}}"
+                >
                   <text wx:if="{{card.isVisible}}" data-suit="{{card.suit}}">{{card.suit}}{{card.value}}</text>
+                  <!-- 未可见时显示点击提示覆盖层（仅当前玩家） -->
+                  <view wx:if="{{!card.isVisible}}" class="card-overlay">
+                    <text class="card-overlay-text">点击看牌</text>
+                  </view>
                 </view>
               </block>
             </view>
@@ -91,13 +109,12 @@
     <block wx:else>
       <view class="action-row">
         <!-- 第一行按钮 -->
-        <button class="action-btn" bindtap="onCheck">看牌</button>
         <button class="action-btn" bindtap="onFold">弃牌</button>
         <button class="action-btn" bindtap="onFollow" wx:if="{{isCurrentPlayer}}">跟注</button>
       </view>
       <view class="action-row">
         <!-- 第二行按钮 -->
-        <button class="action-btn" bindtap="onRaise" wx:if="{{isCurrentPlayer}}">加注</button>
+        <button class="action-btn" bindtap="onRaise" wx:if="{{isCurrentPlayer}}">下注</button>
         <button class="action-btn" bindtap="onCompare" wx:if="{{isCurrentPlayer}}">比牌</button>
       </view>
     </block>
@@ -119,7 +136,7 @@
 
   <!-- 加注输入框 -->
   <view class="raise-input" wx:if="{{showRaiseInput}}">
-    <input type="number" placeholder="请输入加注金额" bindinput="onRaiseInputChange" value="{{raiseAmount}}"/>
+    <input type="number" placeholder="请输入下注金额" bindinput="onRaiseInputChange" value="{{raiseAmount}}"/>
     <button bindtap="confirmRaise">确定</button>
     <button bindtap="cancelRaise">取消</button>
   </view>
