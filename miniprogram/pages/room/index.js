@@ -64,8 +64,6 @@ Page({
         userInfo: app.globalData.userInfo,
         isReady: false // 默认未准备
       })
-      console.log('页面加载，设置isReady为false');
-      
       // 先获取房间信息，获取初始积分
       wx.cloud.callFunction({
         name: 'roomManage',
@@ -75,14 +73,12 @@ Page({
         }
       }).then(res => {
         if (res.result && res.result.success && res.result.roomInfo) {
-          console.log('getRoomInfo返回:', res.result.roomInfo);
           const initialScore = res.result.roomInfo.initialScore || 0;
           
           // 再次确保在加入房间前设置isReady为false
           this.setData({
             isReady: false
           });
-          console.log('加入房间前，再次设置isReady为false');
           
           this.joinRoom(initialScore);
           
@@ -90,7 +86,6 @@ Page({
           this.setData({
             isReady: false
           });
-          console.log('设置监听前，再次设置isReady为false');
           
           this.setupRoomListener();
         } else {
@@ -124,15 +119,9 @@ Page({
 
   // 页面生命周期函数--监听页面初次渲染完成
   onReady: function() {
-    console.log('页面生命周期函数onReady被调用 - 时间:', new Date().toLocaleString());
-    console.log('当前页面状态 - isReady:', this.data.isReady, '- gameStatus:', this.data.gameStatus);
-    
     // 确保房间监听已设置
     if (!this.roomListener && this.data.roomId) {
-      console.log('onReady中设置房间监听');
       this.setupRoomListener();
-    } else {
-      console.log('房间监听已设置或房间ID不存在');
     }
   },
 
@@ -150,7 +139,7 @@ Page({
   //},
   
   // 加入房间
-  joinRoom: function (initialScore) {
+  joinRoom: function (initialScore = 1000) {
     wx.showLoading({
       title: '加入房间中',
     })
@@ -162,7 +151,6 @@ Page({
     
     // 确保用户信息中包含头像URL和昵称，并清理URL中的空格、引号和反引号
     let userInfo = this.data.userInfo;
-    console.log('原始用户信息:', JSON.stringify(userInfo));
     
     // 确保有昵称
     if (!userInfo.nickName) {
@@ -172,7 +160,6 @@ Page({
       } else {
         userInfo.nickName = '玩家';
       }
-      console.log('设置用户昵称:', userInfo.nickName);
     }
     
     // 确保有头像
@@ -191,10 +178,6 @@ Page({
       userInfo.avatarUrl = userInfo.avatarUrl.replace(/`/g, '');
     }
     
-    console.log('准备加入房间:', this.data.roomId);
-    console.log('初始积分:', initialScore);
-    console.log('用户信息:', JSON.stringify(userInfo));
-    console.log('准备状态:', this.data.isReady);
     wx.cloud.callFunction({
       name: 'roomManage',
       data: {
@@ -205,15 +188,12 @@ Page({
       }
     }).then(res => {
       wx.hideLoading();
-      console.log('joinRoom 云函数返回:', JSON.stringify(res.result));
       
       if (res.result && res.result.success) {
         const roomInfo = res.result.roomInfo;
-        console.log('获取到的房间信息:', JSON.stringify(roomInfo));
         
         // 强制设置isReady为false
         const formattedPlayers = this.formatPlayers(roomInfo.players);
-        console.log('加入房间后，格式化的玩家列表:', JSON.stringify(formattedPlayers));
         
         // 判断当前用户是否是房主
         const isOwner = roomInfo.players.length > 0 && 
@@ -228,8 +208,6 @@ Page({
           isReady: false, // 确保玩家进入房间后不会自动准备
           isCurrentPlayer: isOwner && roomInfo.status === 'waiting' // 如果是房主且房间状态为等待中，则设置为当前玩家
         }, () => {
-          console.log('页面数据更新完成, players:', JSON.stringify(this.data.players));
-          console.log('当前玩家状态:', this.data.isCurrentPlayer ? '是当前玩家' : '不是当前玩家');
           // 强制刷新页面
           this.forceUpdate();
         });
@@ -237,10 +215,7 @@ Page({
         // 确保数据库中的isReady也为false
         const myPlayer = roomInfo.players.find(p => p.openId === this.data.userInfo._openid);
         if (myPlayer) {
-          console.log('加入房间后，检查isReady状态 - 数据库:', myPlayer.isReady, '前端:', this.data.isReady);
-          
           // 无论数据库中的isReady是什么值，都强制设置为false
-          console.log('加入房间后，强制设置数据库中isReady为false');
           wx.cloud.callFunction({
             name: 'gameLogic',
             data: {
@@ -250,7 +225,6 @@ Page({
             }
           }).then(res => {
             if (res.result && res.result.success) {
-              console.log('成功更新数据库中的isReady状态为false');
               // 再次确认前端状态为false
               this.setData({
                 isReady: false
@@ -459,27 +433,12 @@ Page({
 
   // 设置房间数据监听
   setupRoomListener: function () {
-    console.log('设置房间监听, roomId:', this.data.roomId);
     const db = wx.cloud.database();
     // 监听房间信息变化
     this.roomListener = db.collection('rooms')
       .where({ roomId: this.data.roomId })
       .watch({
         onChange: snapshot => {
-          console.log('收到房间数据变化, type:', snapshot.type);
-          console.log('snapshot.docChanges:', JSON.stringify(snapshot.docChanges));
-          
-          // 确保能处理所有类型的数据变化，包括type为undefined的情况
-          console.log('处理房间数据变化，snapshot.type:', snapshot.type);
-          
-          // 检查是否有docChanges数据
-          if (snapshot.docChanges && snapshot.docChanges.length > 0) {
-            console.log('检测到docChanges数据变化，长度:', snapshot.docChanges.length);
-            snapshot.docChanges.forEach((change, index) => {
-              console.log(`docChange[${index}]:`, JSON.stringify(change));
-            });
-          }
-          
           // 无论snapshot.type是什么，都尝试处理数据
           // 确保有文档数据
           if (!snapshot.docs || snapshot.docs.length === 0) {
@@ -489,99 +448,70 @@ Page({
           
           const roomData = snapshot.docs[0];
           if (roomData) {
-            console.log('房间数据更新:', JSON.stringify(roomData));
             const players = roomData.players || [];
-            console.log('房间玩家列表:', JSON.stringify(players));
-            console.log('玩家昵称列表:', players.map(p => p.nickname).join(', '));
               
-              // 确保所有玩家都有头像URL和昵称，并清理URL中的空格、引号和反引号
-              players.forEach(player => {
-                // 处理昵称
-                if (!player.nickName && player.nickname) {
-                  player.nickName = player.nickname;
-                } else if (!player.nickname && player.nickName) {
-                  player.nickname = player.nickName;
-                } else if (!player.nickname && !player.nickName) {
-                  player.nickname = '玩家';
-                  player.nickName = '玩家';
-                }
-                
-                console.log(`处理玩家 ${player.openId} 的昵称:`, JSON.stringify({
-                  nickName: player.nickName,
-                  nickname: player.nickname
-                }));
-                
-                // 处理头像
-                if (!player.avatarUrl) {
-                  player.avatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0';
-                } else {
-                  // 清理头像URL
-                  // 移除所有空格
-                  player.avatarUrl = player.avatarUrl.replace(/\s+/g, '');
-                  // 移除URL两端可能存在的引号和反引号
-                  if ((player.avatarUrl.startsWith('"') || player.avatarUrl.startsWith('\'') || player.avatarUrl.startsWith('`')) && 
-                      (player.avatarUrl.endsWith('"') || player.avatarUrl.endsWith('\'') || player.avatarUrl.endsWith('`'))) {
-                    player.avatarUrl = player.avatarUrl.substring(1, player.avatarUrl.length - 1);
-                  }
-                  // 移除URL中间可能存在的反引号
-                  player.avatarUrl = player.avatarUrl.replace(/`/g, '');
-                }
-              });
-              
-              const formattedPlayers = this.formatPlayers(players);
-              console.log('格式化后的玩家列表:', JSON.stringify(formattedPlayers));
-
-              // 判断当前用户是否是房主
-              const isOwner = players.length > 0 && 
-                             players[0].openId === this.data.userInfo._openid && 
-                             players[0].isOwner;
-              
-              // 更新页面数据
-              this.setData({
-                roomInfo: roomData,
-                players: formattedPlayers,
-                gameStatus: roomData.status,
-                baseScore: roomData.baseScore,
-                isCurrentPlayer: isOwner && roomData.status === 'waiting' // 如果是房主且房间状态为等待中，则设置为当前玩家
-              }, () => {
-                console.log('页面数据更新完成，当前玩家列表:', JSON.stringify(this.data.players));
-                // 强制刷新页面
-                this.forceUpdate();
-              });
-
-              // 获取当前玩家信息
-              const myPlayer = players.find(p => p.openId === this.data.userInfo._openid);
-              console.log('当前玩家信息:', myPlayer ? JSON.stringify(myPlayer) : '未找到当前玩家');
-              
-              // 同步isReady状态
-              if (myPlayer && myPlayer.isReady !== this.data.isReady) {
-                console.log('同步isReady状态:', myPlayer.isReady);
-                this.setData({ isReady: myPlayer.isReady });
+            // 确保所有玩家都有头像URL和昵称，并清理URL中的空格、引号和反引号
+            players.forEach(player => {
+              // 处理昵称
+              if (!player.nickName && player.nickname) {
+                player.nickName = player.nickname;
+              } else if (!player.nickname && player.nickName) {
+                player.nickname = player.nickName;
+              } else if (!player.nickname && !player.nickName) {
+                player.nickname = '玩家';
+                player.nickName = '玩家';
               }
-              // 如果游戏状态变为playing，则设置游戏监听
-              console.log('=== 检查是否需要设置游戏监听 - 时间:', new Date().toLocaleString(), '===');
-              console.log('游戏状态:', roomData.status);
-              console.log('当前游戏ID:', roomData.currentGameId);
-              console.log('是否已有监听:', !!this.gameListener);
-              console.log('房间状态:', roomData.status);
-              console.log('房间玩家数量:', roomData.players ? roomData.players.length : 0);
               
-              // 强制重新设置游戏监听，确保数据更新能被捕获
-              if (roomData.status === 'playing' && roomData.currentGameId) {
-                console.log('游戏状态为playing且有currentGameId，设置游戏监听');
-                // 无论是否已有监听器，都重新设置
-                this.setupGameListener(roomData.currentGameId);
+              // 处理头像
+              if (!player.avatarUrl) {
+                player.avatarUrl = 'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0';
               } else {
-                console.log('不满足设置游戏监听条件，跳过');
-                if (roomData.status !== 'playing') {
-                  console.log('游戏状态不是playing，不设置监听');
+                // 清理头像URL
+                // 移除所有空格
+                player.avatarUrl = player.avatarUrl.replace(/\s+/g, '');
+                // 移除URL两端可能存在的引号和反引号
+                if ((player.avatarUrl.startsWith('"') || player.avatarUrl.startsWith('\'') || player.avatarUrl.startsWith('`')) && 
+                    (player.avatarUrl.endsWith('"') || player.avatarUrl.endsWith('\'') || player.avatarUrl.endsWith('`'))) {
+                  player.avatarUrl = player.avatarUrl.substring(1, player.avatarUrl.length - 1);
                 }
-                if (!roomData.currentGameId) {
-                  console.log('没有currentGameId，不设置监听');
-                }
+                // 移除URL中间可能存在的反引号
+                player.avatarUrl = player.avatarUrl.replace(/`/g, '');
               }
+            });
+            
+            const formattedPlayers = this.formatPlayers(players);
+
+            // 判断当前用户是否是房主
+            const isOwner = players.length > 0 && 
+                           players[0].openId === this.data.userInfo._openid && 
+                           players[0].isOwner;
+            
+            // 更新页面数据
+            this.setData({
+              roomInfo: roomData,
+              players: formattedPlayers,
+              gameStatus: roomData.status,
+              baseScore: roomData.baseScore,
+              isCurrentPlayer: isOwner && roomData.status === 'waiting' // 如果是房主且房间状态为等待中，则设置为当前玩家
+            }, () => {
+              // 强制刷新页面
+              this.forceUpdate();
+            });
+
+            // 获取当前玩家信息
+            const myPlayer = players.find(p => p.openId === this.data.userInfo._openid);
+            
+            // 同步isReady状态
+            if (myPlayer && myPlayer.isReady !== this.data.isReady) {
+              this.setData({ isReady: myPlayer.isReady });
+            }
+            
+            // 强制重新设置游戏监听，确保数据更新能被捕获
+            if (roomData.status === 'playing' && roomData.currentGameId) {
+              // 无论是否已有监听器，都重新设置
+              this.setupGameListener(roomData.currentGameId);
+            }
           } else if (snapshot.type === 'remove') {
-            console.log('房间被删除');
             // 房间被删除
             wx.showToast({
               title: '房间已被解散',
@@ -595,25 +525,47 @@ Page({
         },
         onError: err => {
           console.error('房间监听错误:', err.code, err.message, err);
-          wx.showToast({
-            title: '房间监听失败: ' + (err.message || err.code),
-            icon: 'none',
-            duration: 3000
-          });
+          
+          // 显示错误提示，但不要太频繁打扰用户
+          if (retryCount === 0) {
+            wx.showToast({
+              title: '房间监听连接中断，正在重试...',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+          
+          // 实现重试机制
+          if (retryCount < MAX_RETRIES) {
+            console.log(`房间监听失败，${RETRY_DELAY/1000}秒后进行第${retryCount + 1}次重试`);
+            setTimeout(() => {
+              this.setupRoomListener(retryCount + 1);
+            }, RETRY_DELAY);
+          } else {
+            console.error(`房间监听失败，已重试${MAX_RETRIES}次，不再重试`);
+            wx.showToast({
+              title: '房间连接失败，请退出重进',
+              icon: 'none',
+              duration: 3000
+            });
+          }
         }
-      })
+      });
+      
+    // 返回监听器实例，方便后续管理
+    return this.roomListener;
   },
 
   // 设置游戏数据监听
-  setupGameListener: function (gameId) {
-    console.log('=== 设置游戏数据监听 - 时间:', new Date().toLocaleString(), '===');
-    console.log('设置游戏数据监听, gameId:', gameId);
+  setupGameListener: function (gameId, retryCount = 0) {
+    const MAX_RETRIES = 3; // 最大重试次数
+    const RETRY_DELAY = 2000; // 重试延迟时间（毫秒）
     
     // 如果已经有监听器，先关闭
     if (this.gameListener) {
-      console.log('关闭已存在的游戏监听器');
       try {
         this.gameListener.close();
+        this.gameListener = null;
       } catch (err) {
         console.error('关闭游戏监听器失败:', err);
       }
@@ -624,37 +576,14 @@ Page({
       .where({ gameId: gameId })
       .watch({
         onChange: snapshot => {
-          console.log('=== 收到游戏数据变化 - 时间:', new Date().toLocaleString(), '===');
-          console.log('收到游戏数据变化, type:', snapshot.type);
-          console.log('snapshot.docChanges长度:', snapshot.docChanges ? snapshot.docChanges.length : 0);
-          
-          // 检查是否有docChanges数据
-          if (snapshot.docChanges && snapshot.docChanges.length > 0) {
-            console.log('检测到docChanges数据变化，长度:', snapshot.docChanges.length);
-            snapshot.docChanges.forEach((change, index) => {
-              console.log(`docChange[${index}].dataType:`, change.dataType);
-              console.log(`docChange[${index}].queueType:`, change.queueType);
-              console.log(`docChange[${index}].docId:`, change.docId);
-              console.log(`docChange[${index}].updatedFields:`, JSON.stringify(change.updatedFields));
-            });
-          }
-          
           // 修改逻辑，不再严格检查snapshot.type，只要有docs数据就处理
-          console.log('游戏数据变化, type:', snapshot.type || 'undefined');
           if (!snapshot.docs || snapshot.docs.length === 0) {
             console.error('游戏数据更新: 没有找到文档数据');
             return;
           }
           
-          console.log('snapshot.docs长度:', snapshot.docs.length);
           const gameData = snapshot.docs[0];
           if (gameData) {
-            console.log('游戏数据更新，准备调用updateGameData函数');
-            console.log('游戏数据ID:', gameData._id);
-            console.log('游戏状态:', gameData.status);
-            console.log('当前玩家索引:', gameData.currentPlayerIndex);
-            console.log('玩家数量:', gameData.players ? gameData.players.length : 0);
-            
             // 更新游戏相关数据
             this.updateGameData(gameData);
           } else {
@@ -662,19 +591,38 @@ Page({
           }
         },
         onError: err => {
-          console.error('游戏监听错误:', err);
+          console.error('游戏监听错误:', err.message || err);
+          
+          // 显示错误提示，但不要太频繁打扰用户
+          if (retryCount === 0) {
+            wx.showToast({
+              title: '游戏数据连接中断，正在重试...',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+          
+          // 实现重试机制
+          if (retryCount < MAX_RETRIES) {
+            setTimeout(() => {
+              this.setupGameListener(gameId, retryCount + 1);
+            }, RETRY_DELAY);
+          } else {
+            console.error(`游戏监听失败，已重试${MAX_RETRIES}次，不再重试`);
+            wx.showToast({
+              title: '游戏数据连接失败，请退出重进',
+              icon: 'none',
+              duration: 3000
+            });
+          }
         }
       });
-    console.log('游戏数据监听设置完成, gameListener:', this.gameListener ? '已设置' : '设置失败');
+    
+    return this.gameListener;
   },
 
   // 更新游戏数据
   updateGameData: function (gameData) {
-    console.log('=== updateGameData函数被调用 - 时间:', new Date().toLocaleString(), '===');
-    console.log('更新游戏数据:', JSON.stringify(gameData));
-    console.log('游戏状态:', gameData.status, '当前玩家索引:', gameData.currentPlayerIndex);
-    console.log('游戏玩家数据:', JSON.stringify(gameData.players));
-    
     // 更新总下注池
     try {
       const pot = (gameData.players || []).reduce((acc, p) => acc + (p.totalBet || 0), 0);
@@ -683,7 +631,6 @@ Page({
       console.warn('计算总下注失败，回退使用后端字段:', e);
       this.setData({ totalPot: gameData.totalPot || 0 });
     }
-    console.log('更新总下注池:', gameData.totalPot || 0);
 
     // 计算并更新当前最高下注
     try {
@@ -698,33 +645,17 @@ Page({
         this.setData({ currentMaxBet: maxBet });
       }
     } catch (e) {
-      console.warn('计算当前最高下注失败:', e);
+      console.warn('计算最高下注失败:', e);
     }
 
-    // 更新玩家数据（手牌、下注等）
-    console.log('开始更新玩家数据，当前玩家数量:', this.data.players.length);
+    // 更新玩家数据，确保保留手牌可见性
     const updatedPlayers = this.data.players.map(player => {
-      console.log(`处理玩家 ${player.nickname}(${player.openId})`);
+      // 查找对应的游戏数据
       const playerGameData = gameData.players.find(p => p.openId === player.openId);
       if (playerGameData) {
-        console.log(`找到玩家 ${player.nickname} 的游戏数据`);
-        console.log(`玩家 ${player.nickname} 原始数据:`, JSON.stringify(player));
-        console.log(`玩家 ${player.nickname} 的游戏数据:`, JSON.stringify(playerGameData));
-        console.log(`玩家 ${player.nickname} 原始数据详情:`, 
-                  `状态=${player.status}, ` +
-                  `当前下注=${player.currentBet}, ` +
-                  `总下注=${player.totalBet}, ` +
-                  `手牌数量=${player.handCards ? player.handCards.length : 0}`);
-        console.log(`玩家 ${player.nickname} 游戏数据详情:`, 
-                  `状态=${playerGameData.status}, ` +
-                  `当前下注=${playerGameData.currentBet}, ` +
-                  `总下注=${playerGameData.totalBet}, ` +
-                  `手牌数量=${playerGameData.handCards ? playerGameData.handCards.length : 0}`);
-        
-        // 保存原有手牌的可见性状态
+        // 处理手牌，保留可见性
         const preservedHandCards = [];
         if (player.handCards && player.handCards.length > 0) {
-          console.log(`玩家 ${player.nickname} 有原始手牌，数量:`, player.handCards.length);
           // 创建一个映射，记录每张牌的可见性
           const visibilityMap = {};
           player.handCards.forEach(card => {
@@ -732,19 +663,16 @@ Page({
             const cardValue = card.rank || card.value;
             const cardKey = `${card.suit}_${cardValue}`;
             visibilityMap[cardKey] = card.isVisible;
-            console.log(`记录手牌可见性: ${cardKey} = ${card.isVisible}`);
           });
           
           // 应用可见性到新的手牌
           if (playerGameData.handCards && playerGameData.handCards.length > 0) {
-            console.log(`玩家 ${player.nickname} 游戏数据中有手牌，数量:`, playerGameData.handCards.length);
             preservedHandCards.push(...playerGameData.handCards.map(card => {
               // 兼容 card.rank 和 card.value 两种情况
               const cardValue = card.rank || card.value;
               const cardKey = `${card.suit}_${cardValue}`;
               const isVisible = player.openId === this.data.userInfo._openid && visibilityMap[cardKey] !== undefined ? 
                               visibilityMap[cardKey] : (card.isVisible || false);
-              console.log(`应用手牌可见性: ${cardKey} = ${isVisible}`);
               return {
                 ...card,
                 // 如果是当前玩家且之前看过牌，保持可见性
@@ -753,12 +681,10 @@ Page({
             }));
           } else {
             // 如果游戏数据中没有手牌，保留原有手牌
-            console.log(`玩家 ${player.nickname} 游戏数据中没有手牌，保留原有手牌`);
             preservedHandCards.push(...player.handCards);
           }
         } else if (playerGameData.handCards && playerGameData.handCards.length > 0) {
           // 如果之前没有手牌，使用新的手牌
-          console.log(`玩家 ${player.nickname} 没有原始手牌，使用游戏数据中的手牌`);
           preservedHandCards.push(...playerGameData.handCards);
         }
         
@@ -775,15 +701,7 @@ Page({
           hasChecked: playerGameData.hasChecked || false
         };
         
-        console.log(`更新后的玩家 ${player.nickname} 数据:`, 
-                  `状态=${updatedPlayer.status}, ` +
-                  `当前下注=${updatedPlayer.currentBet}, ` +
-                  `总下注=${updatedPlayer.totalBet}, ` +
-                  `手牌数量=${updatedPlayer.handCards ? updatedPlayer.handCards.length : 0}`);
-                  
         return updatedPlayer;
-      } else {
-        console.log(`未找到玩家 ${player.nickname} 的游戏数据，保持原样`);
       }
       return player
     })
@@ -817,7 +735,6 @@ Page({
     // 获取活跃玩家（用于比牌选择）
     const activePlayers = updatedPlayers.filter(p => p.status === 'playing')
 
-    console.log('准备更新页面数据，玩家数量:', updatedPlayers.length);
     this.setData({
       players: updatedPlayers,
       isCurrentPlayer: isCurrentPlayer,
@@ -1019,19 +936,14 @@ Page({
   
   // 强制刷新页面
   forceUpdate: function() {
-    console.log('强制刷新页面');
     // 使用一个空的setData来触发页面重新渲染
     this.setData({
       _forceUpdate: Date.now()
-    }, () => {
-      console.log('页面强制刷新完成');
     });
   },
 
   // 准备按钮点击 - 重命名以避免与生命周期函数冲突
   onPlayerReady: function () {
-    console.log('onPlayerReady函数被调用 - 时间:', new Date().toLocaleString());
-    
     // 如果已经准备，则取消准备
     if (this.data.isReady) {
       wx.cloud.callFunction({
@@ -1046,7 +958,6 @@ Page({
           this.setData({
             isReady: false
           })
-          console.log('取消准备成功')
         } else {
           wx.showToast({
             title: res.result.message || '取消准备失败',
@@ -1073,7 +984,6 @@ Page({
           this.setData({
             isReady: true
           })
-          console.log('准备成功')
         } else {
           wx.showToast({
             title: res.result.message || '准备失败',

@@ -103,6 +103,10 @@ async function joinRoom(event, context) {
     }
 
     const room = roomRes.data[0];
+    await cloud.logger().info({
+      tag: 'joinRoom-romm----',
+      room: room
+    });
 
     // 检查玩家是否已在房间中
     const playerIndex = room.players.findIndex(player => player.openId === openId);
@@ -170,8 +174,8 @@ async function joinRoom(event, context) {
       return { success: true, message: '您已在房间中', roomInfo: room };
     }
 
-    // 检查房间是否已满 (假设最多4人)
-    if (room.players.length >= 4) {
+    // 检查房间是否已满 (最多9人)
+    if (room.players.length >= 9) {
       return { success: false, message: '房间已满' };
     }
 
