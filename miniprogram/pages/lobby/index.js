@@ -7,6 +7,8 @@ Page({
     timer: null,
     showCreateRoomModal: false,
     showJoinRoomModal: false,
+    showRulesModal: false, // 游戏规则弹窗
+    showUserInfoModal: false, // 玩家信息弹窗
     roomType: 'private', // 默认私人房间
     baseScore: 10, // 默认底分
     initialScore: 1000, // 默认初始积分
@@ -14,9 +16,32 @@ Page({
   },
   onLoad() {
     const userInfo = wx.getStorageSync('userInfo');
+    console.log('userInfo111111111', userInfo);
     if (userInfo) {
+      // 如果没有积分信息，默认设置为1000
+      if (!userInfo.score) {
+        userInfo.score = 10000;
+      }
+      // 确保有昵称信息，如果没有则设置默认昵称
+      if (!userInfo.nickname) {
+        userInfo.nickname = '玩家';
+      }
       this.setData({ userInfo });
     }
+  },
+  
+  // 显示玩家信息
+  showUserInfo() {
+    this.setData({
+      showUserInfoModal: true
+    });
+  },
+  
+  // 隐藏玩家信息
+  hideUserInfo() {
+    this.setData({
+      showUserInfoModal: false
+    });
   },
   onMatchTap() {
     // 直接提示暂未开放
@@ -110,7 +135,24 @@ Page({
     });
   },
 
-  doNothing() {},
+  doNothing(e) {
+    // 阻止事件冒泡
+    e.stopPropagation();
+  },
+
+  // 显示游戏规则
+  showGameRules() {
+    this.setData({
+      showRulesModal: true
+    });
+  },
+  
+  // 隐藏游戏规则
+  hideGameRules() {
+    this.setData({
+      showRulesModal: false
+    });
+  },
 
   async confirmJoinRoom() {
     const { inputRoomId, userInfo } = this.data;

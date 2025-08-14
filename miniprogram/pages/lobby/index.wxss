@@ -1,7 +1,110 @@
 .page-background {
-  background-color: #f5f5f5;
+  background-color: #f0f8f0;
   min-height: 100vh;
   width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 添加扑克牌元素动画 */
+@keyframes floatingCards {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+  50% { transform: translateY(-15px) rotate(5deg); opacity: 0.4; }
+  100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+}
+
+@keyframes scaleIn {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* 扑克牌装饰元素 */
+.card-decoration {
+  position: absolute;
+  width: 80rpx;
+  height: 80rpx;
+  opacity: 0.15;
+  z-index: 1;
+}
+
+.card-decoration::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.card-spade {
+  top: 10%;
+  left: 15%;
+  animation: floatingCards 7s infinite ease-in-out;
+}
+
+.card-spade::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,15 C50,15 20,45 20,65 C20,80 35,90 50,80 C65,90 80,80 80,65 C80,45 50,15 50,15 Z M50,80 L50,95" stroke="black" stroke-width="2" fill="black"/></svg>');
+}
+
+.card-heart {
+  top: 20%;
+  right: 15%;
+  animation: floatingCards 9s infinite ease-in-out 1s;
+}
+
+.card-heart::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,20 C35,0 10,15 10,40 C10,65 50,90 50,90 C50,90 90,65 90,40 C90,15 65,0 50,20 Z" stroke="red" stroke-width="2" fill="red"/></svg>');
+}
+
+.card-club {
+  bottom: 20%;
+  left: 20%;
+  animation: floatingCards 8s infinite ease-in-out 2s;
+}
+
+.card-club::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,15 A15,15 0 1,1 50,45 A15,15 0 1,1 30,30 A15,15 0 1,1 70,30 A15,15 0 1,1 50,45 M50,45 L50,85" stroke="black" stroke-width="2" fill="black"/></svg>');
+}
+
+.card-diamond {
+  bottom: 15%;
+  right: 20%;
+  animation: floatingCards 10s infinite ease-in-out 3s;
+}
+
+.card-diamond::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,10 L85,50 L50,90 L15,50 Z" stroke="red" stroke-width="2" fill="red"/></svg>');
+}
+
+.page-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M25,10 L75,10 L90,35 L50,90 L10,35 Z" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="1"/><path d="M30,20 A10,10 0 1,1 50,20 A10,10 0 1,1 70,20" fill="none" stroke="rgba(255,0,0,0.05)" stroke-width="1"/><path d="M30,80 A10,10 0 1,0 50,80 A10,10 0 1,0 70,80" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="1"/><rect x="40" y="40" width="20" height="20" rx="2" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="1"/></svg>');
+  background-size: 150px 150px;
+  opacity: 0.4;
+  z-index: 0;
+  animation: floatingCards 8s infinite ease-in-out;
+}
+
+.game-title {
+  text-align: center;
+  padding-top: 80rpx;
+  margin-bottom: 40rpx;
+  z-index: 1;
+  position: relative;
+}
+
+.game-title text {
+  font-size: 80rpx;
+  font-weight: bold;
+  color:#1a6840;
+  text-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
+  letter-spacing: 10rpx;
 }
 
 .lobby-container {
@@ -24,46 +127,157 @@
   align-items: center;
 }
 
+.user-info-container {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 16rpx;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 40rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+  z-index: 100;
+}
+
+.user-info-container:active {
+  transform: scale(0.95);
+  background-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+}
+
 .avatar {
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
   margin-right: 12rpx;
+  border: 2rpx solid #ffffff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
 }
 
 .nickname {
   font-size: 28rpx;
   color: #333;
   font-weight: bold;
+  text-shadow: 0 1rpx 2rpx rgba(255, 255, 255, 0.5);
+}
+
+/* 玩家信息弹窗样式 */
+.user-info-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 20rpx;
+  width: 70%;
+  max-width: 500rpx;
+  overflow: hidden;
+  z-index: 1001;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.3);
+  border: 4rpx solid #2a8c5a;
+  animation: scaleIn 0.3s ease;
+  pointer-events: auto;
+}
+
+.user-info-content {
+  padding: 40rpx 30rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.user-info-avatar {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 50%;
+  margin-bottom: 20rpx;
+  border: 4rpx solid #2a8c5a;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
+}
+
+.user-info-name {
+  font-size: 36rpx;
+  font-weight: bold;
+  color:rgb(223, 80, 13);
+  margin-bottom: 10rpx;
+}
+
+.user-info-score {
+  font-size: 32rpx;
+  color: #1a6840;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+  padding: 10rpx 30rpx;
+  background-color: rgba(42, 140, 90, 0.2);
+  border-radius: 30rpx;
 }
 
 .match-btn {
   width: 80%;
-  background-color: #FF9800;
+  background-color: #bb644e;
   color: white;
   padding: 20rpx 0;
   border-radius: 10rpx;
   font-size: 32rpx;
   margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.match-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
 }
 
 .create-room-btn {
   width: 80%;
-  background-color: #4CAF50;
+  background-color: #d3aa3a;
   color: white;
   padding: 20rpx 0;
   border-radius: 10rpx;
   font-size: 32rpx;
   margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.create-room-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
 }
 
 .join-room-btn {
   width: 80%;
-  background-color: #2196F3;
+  background-color: #72c576;
   color: white;
   padding: 20rpx 0;
   border-radius: 10rpx;
   font-size: 32rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.join-room-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+}
+
+.rules-btn {
+  width: 80%;
+  background-color: #9575CD;
+  color: white;
+  padding: 20rpx 0;
+  border-radius: 10rpx;
+  font-size: 32rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.rules-btn:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
 }
 
 /* Modal styles */
@@ -86,19 +300,55 @@
   to { opacity: 1; }
 }
 
+/* 游戏规则弹窗样式 */
+.rules-dialog {
+  max-height: 80%;
+}
+
+.rules-content {
+  max-height: 60vh;
+  padding: 0;
+}
+
+.rules-scroll {
+  height: 100%;
+  max-height: 60vh;
+  padding: 20rpx;
+}
+
+.rules-section {
+  margin-bottom: 30rpx;
+}
+
+.rules-subtitle {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #FFD700; /* 金色文字 */
+  margin-bottom: 20rpx;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.5); /* 淡金色边框 */
+  padding-bottom: 10rpx;
+}
+
+.rule-item {
+  font-size: 28rpx;
+  color: #ffffff;
+  margin-bottom: 10rpx;
+  line-height: 1.5;
+}
+
 .modal-dialog {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: #0e5733; /* 绿色背景，与游戏主题相符 */
+  background-color: #1a6840; /* 深绿色背景 */
   border-radius: 16rpx;
   width: 80%;
   max-width: 600rpx;
   overflow: hidden;
   z-index: 1001;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.5);
-  border: 4rpx solid #ffcc00; /* 金色边框 */
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.3);
+  border: 4rpx solid #FFD700; /* 金色边框 */
   animation: scaleIn 0.3s ease;
 }
 
@@ -112,9 +362,9 @@
   font-weight: bold;
   text-align: center;
   padding: 30rpx;
-  border-bottom: 2rpx solid #ffcc00; /* 金色分隔线 */
+  border-bottom: 2rpx solid #FFD700; /* 金色分隔线 */
   color: #ffffff; /* 白色文字 */
-  background-color: #0a4527; /* 深绿色标题背景 */
+  background-color: #2a8c5a; /* 绿色标题背景 */
 }
 
 .modal-content {
@@ -131,17 +381,17 @@
 .form-item .label {
   width: 150rpx;
   font-size: 30rpx;
-  color: #ffcc00; /* 金色标签 */
+  color: #FFD700; /* 金色标签 */
   font-weight: bold;
 }
 
 .form-item input {
   flex: 1;
-  border: 2rpx solid #ffcc00; /* 金色边框 */
+  border: 2rpx solid #2a8c5a; /* 绿色边框 */
   padding: 15rpx;
   border-radius: 8rpx;
   font-size: 30rpx;
-  background-color: rgba(255, 255, 255, 0.1); /* 半透明白色背景 */
+  background-color: rgba(255, 255, 200, 0.1); /* 半透明白色背景 */
   color: #ffffff; /* 白色文字 */
 }
 
@@ -163,8 +413,7 @@
 
 .modal-footer {
   display: flex;
-  border-top: 2rpx solid #ffcc00; /* 金色分隔线 */
-  background-color: #0a4527; /* 深绿色底部背景 */
+  border-top: 2rpx solid #C5CAE9; /* 浅蓝色分隔线 */
 }
 
 .modal-footer button {
@@ -178,19 +427,19 @@
 }
 
 .modal-footer .btn-cancel {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background-color: rgba(255, 215, 0, 0); /* 淡金色背景 */
+  color: #ffffff; /* 白色文字 */
 }
 
 .modal-footer .btn-cancel:active {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 215, 0, 0.3); /* 稍深的淡金色 */
 }
 
 .modal-footer .btn-confirm {
-  background-color: #ffcc00; /* 金色按钮 */
-  color: #0a4527; /* 深绿色文字 */
+  background-color: #2a8c5a; /* 绿色按钮 */
+  color: #FFD700; /* 金色文字 */
 }
 
 .modal-footer .btn-confirm:active {
-  background-color: #d4af37; /* 深金色 */
+  background-color: #1a6840; /* 深绿色 */
 }

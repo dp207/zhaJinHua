@@ -1,15 +1,39 @@
 <view class="page-background">
+  <!-- 扑克牌装饰元素 -->
+  <view class="card-decoration card-spade"></view>
+  <view class="card-decoration card-heart"></view>
+  <view class="card-decoration card-club"></view>
+  <view class="card-decoration card-diamond"></view>
   <view class="lobby-header">
-    <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" />
-    <text class="nickname">{{userInfo.nickName}}</text>
+    <view class="user-info-container" bindtap="showUserInfo">
+      <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" />
+      <text class="nickname">{{userInfo.nickName}}</text>
+    </view>
+  </view>
+  
+  <!-- 玩家信息弹窗 -->
+  <view class="modal-mask" wx:if="{{showUserInfoModal}}" catchtap="hideUserInfo"></view>
+  <view class="user-info-modal" wx:if="{{showUserInfoModal}}" catchtap="doNothing">
+    <view class="user-info-content">
+      <image class="user-info-avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill" />
+      <view class="user-info-name">{{userInfo.nickname}}</view>
+      <view class="user-info-score">当前积分: {{userInfo.score || 0}}</view>
+    </view>
+    <view class="modal-footer" catchtap="doNothing">
+      <button class="btn-confirm" catchtap="hideUserInfo">关闭</button>
+    </view>
   </view>
 
-  <!-- 其余大厅内容可继续补充 -->
+  <view class="game-title">
+    <text>大厅</text>
+  </view>
+
   <view class="lobby-container">
     <view class="btn-container">
       <button bindtap="onMatchTap" class="match-btn">快速匹配</button>
       <button bindtap="onCreateRoomTap" class="create-room-btn">创建房间</button>
       <button bindtap="onJoinRoomTap" class="join-room-btn">加入房间</button>
+      <button bindtap="showGameRules" class="rules-btn">游戏规则</button>
     </view>
 
   <view class="modal-mask" wx:if="{{showCreateRoomModal}}" catchtap="hideCreateRoomModal"></view>
@@ -57,6 +81,38 @@
     <view class="modal-footer" catchtap="doNothing">
       <button class="btn-cancel" catchtap="hideJoinRoomModal">取消</button>
       <button class="btn-confirm" catchtap="confirmJoinRoom">加入</button>
+    </view>
+  </view>
+  
+  <!-- 游戏规则弹窗 -->
+  <view class="modal-mask" wx:if="{{showRulesModal}}" catchtap="hideGameRules"></view>
+  <view class="modal-dialog rules-dialog" wx:if="{{showRulesModal}}" catchtap="doNothing">
+    <view class="modal-title">游戏规则</view>
+    <view class="modal-content rules-content">
+      <scroll-view scroll-y="true" class="rules-scroll">
+        <view class="rules-section">
+          <view class="rules-subtitle">牌型大小（从大到小）</view>
+          <view class="rule-item">1. 豹子：三张点数相同的牌</view>
+          <view class="rule-item">2. 同花顺：花色相同，点数相连的三张牌</view>
+          <view class="rule-item">3. 金花：花色相同，点数不相连的三张牌</view>
+          <view class="rule-item">4. 顺子：花色不同，点数相连的三张牌</view>
+          <view class="rule-item">5. 对子：两张点数相同的牌</view>
+          <view class="rule-item">6. 单张：不构成任何牌型的三张牌</view>
+        </view>
+        
+        <view class="rules-section">
+          <view class="rules-subtitle">游戏流程</view>
+          <view class="rule-item">1. 所有玩家准备后，游戏开始</view>
+          <view class="rule-item">2. 每位玩家发三张牌，牌面朝下</view>
+          <view class="rule-item">3. 玩家轮流操作：看牌、跟注、加注、比牌或弃牌</view>
+          <view class="rule-item">4. 看牌后下注金额翻倍</view>
+          <view class="rule-item">5. 比牌胜者继续游戏，败者淘汰</view>
+          <view class="rule-item">6. 最后剩下的玩家获胜，赢得底池</view>
+        </view>
+      </scroll-view>
+    </view>
+    <view class="modal-footer" catchtap="doNothing">
+      <button class="btn-confirm" catchtap="hideGameRules">关闭</button>
     </view>
   </view>
   </view>

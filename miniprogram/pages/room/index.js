@@ -1234,7 +1234,7 @@ Page({
     // 显示确认弹窗
     wx.showModal({
       title: '比牌确认',
-      content: `是否花费 ${compareScore} 积分与 ${targetName} 比牌？${hasChecked ? '(已看牌，2倍当前基准分)' : '(未看牌，当前基准分)'}`,
+      content: `是否花费 ${compareScore} 积分与 ${targetName} 比牌？${hasChecked ? '(已看牌，2倍最新底注)' : '(未看牌，最新底注)'}`,
       success: (res) => {
         if (res.confirm) {
           // 用户确认比牌

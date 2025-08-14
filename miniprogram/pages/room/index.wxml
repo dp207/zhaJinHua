@@ -40,7 +40,7 @@
         </view>
         <!-- 当前最高下注显示 -->
         <view class="current-max-bet" wx:if="{{gameStatus === 'playing'}}">
-          <text>当前基准分：{{currentMaxBet}}</text>
+          <text>最新底注：{{currentMaxBet}}</text>
         </view>
         <!-- 当前玩家提示 -->
        <!-- <view class="current-player-tip" wx:if="{{gameStatus === 'playing' && gameData.currentPlayerIndex !== undefined && gameData.players && gameData.players[gameData.currentPlayerIndex]}}">
@@ -55,8 +55,8 @@
           <view class="player {{item.isDealer ? 'dealer-player' : ''}} {{gameStatus === 'playing' && gameData.currentPlayerIndex !== undefined && gameData.players[gameData.currentPlayerIndex] && gameData.players[gameData.currentPlayerIndex].openId === item.openId ? 'current-active-player' : ''}}" wx:if="{{item.openId !== userInfo._openid}}">
             <!-- 当前玩家头像动画效果通过CSS实现，不需要额外的指示器元素 -->
             <image class="avatar" src="{{item.avatarUrl}}" bindtap="showPlayerInfo" data-player-id="{{item.openId}}"></image>
-            <text class="status">{{item.status}}</text>
-                          <text class="bet" wx:if="{{item.totalBet > 0}}">下注：{{item.totalBet}}</text>
+            <text class="status">{{item.status === 'playing' ? '游戏中' : (item.status === 'fold' ? '弃牌' : (item.status === 'out' ? '失败' : item.status))}}</text>
+                          <text class="bet" wx:if="{{item.totalBet > 0}}">已下注：{{item.totalBet}}</text>
             <text class="dealer-badge" wx:if="{{item.isDealer}}">庄家</text>
             <!-- 玩家手牌 -->
             <view class="hand-cards {{item.hasChecked ? 'has-checked' : ''}}" wx:if="{{item.handCards && item.handCards.length > 0}}">
@@ -78,8 +78,8 @@
             <!-- 当前玩家信息显示在牌上方，不显示昵称 -->
             <view >
               <text class="current-player-score">积分：{{item.score}}</text>
-              <text class="current-player-bet" wx:if="{{item.totalBet > 0}}">下注：{{item.totalBet}}</text>
-              <text class="current-player-status">{{item.status}}</text>
+              <text class="current-player-bet" wx:if="{{item.totalBet > 0}}">已下注：{{item.totalBet}}</text>
+              <text class="current-player-status">{{item.status === 'playing' ? '游戏中' : (item.status === 'fold' ? '弃牌' : (item.status === 'out' ? '失败' : item.status))}}</text>
             </view>
             <!-- 只显示当前玩家的牌，没看牌前显示牌背 -->
             <view class="current-player-cards" wx:if="{{item.handCards && item.handCards.length > 0}}">
@@ -157,7 +157,7 @@
     <button bindtap="cancelCompare">取消</button>
   </view>
     
-  <!-- 聊天区域 - 右下角侧边栏 -->
+  <!-- 聊天区域 - 右下角侧边栏
   <view class="chat-area-sidebar {{chatCollapsed ? 'collapsed' : ''}}">
     <view class="chat-header" bindtap="toggleChatCollapse">
       <text>{{chatCollapsed ? '聊天' : '收起'}}</text>
@@ -178,7 +178,7 @@
       <button bindtap="sendChatMessage" disabled="{{!canSendChat}}">发送</button>
     </view>
   </view>
-  
+   -->
   <!-- 玩家信息弹出层 -->
   <view class="player-info-popup" wx:if="{{showPlayerInfoPopup}}">
     <view class="player-info-content">

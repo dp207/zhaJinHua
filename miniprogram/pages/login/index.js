@@ -105,7 +105,7 @@ Page({
                 app.globalData.userInfo = cloudRes.result.data;
                 wx.setStorageSync('userInfo', cloudRes.result.data);
                 wx.showToast({
-                  title: '登录成功',
+                  title: '登录成功', 
                   icon: 'success',
                   duration: 1000
                 });
