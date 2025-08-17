@@ -141,5 +141,20 @@ Page({
         }
       }
     });
-  }
+  },
+
+  toweixin(){
+    wx.showLoading({ title: '登录中', mask: true })
+    wx.weixinAppLogin({
+        success () {
+            wx.hideLoading()
+            // 登录成功后，直接调用 wx.getIdentityCode 获取 code
+        },
+        fail(e) {
+            wx.hideLoading()
+            console.log('微信登录失败', e)
+            wx.showToast({ title: '小程序登录失败',  icon: 'error' });
+        }
+  })
+}
 });

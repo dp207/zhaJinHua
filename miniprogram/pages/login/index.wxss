@@ -9,8 +9,8 @@
 }
 
 .logo {
-  width: 180rpx;
-  height: 180rpx;
+  width: 250rpx;
+  height: 250rpx;
   margin-bottom: 40rpx;
   border-radius: 20rpx;
   box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);

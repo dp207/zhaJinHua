@@ -1,6 +1,6 @@
 <view class="container">
   <image class="logo" src="/images/logo.png"></image>
-  <text class="title">炸金花</text>
+  <text class="title">焖鸡</text>
     <block wx:if="{{canIUseNicknameComp && !hasUserInfo}}">
       <button class="{{!userInfo.avatarUrl ? 'avatar-wrapper avatar-pulse' : 'avatar-wrapper'}}" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
         <image class="avatar" src="{{userInfo.avatarUrl}}"></image>

@@ -141,7 +141,7 @@
 
   <!-- 加注输入框 -->
   <view class="raise-input" wx:if="{{showRaiseInput}}">
-    <input type="number" placeholder="请输入下注金额" bindinput="onRaiseInputChange" value="{{raiseAmount}}"/>
+    <input type="number" placeholder="请输入下注积分" bindinput="onRaiseInputChange" value="{{raiseAmount}}"/>
     <button bindtap="confirmRaise">确定</button>
     <button bindtap="cancelRaise">取消</button>
   </view>
